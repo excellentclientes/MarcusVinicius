@@ -94,9 +94,82 @@
         background: #000 repeating-conic-gradient(#111 0% 25%, #0c0c0c 0% 50%) 50% / 16px 16px;
     }
     .destaque-preview img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+
+    /* ==========================================================
+       TELA DE CARREGAMENTO (mesmo estilo do site)
+       ========================================================== */
+    body.fx-loading { overflow: hidden; }
+    #tela-carregamento {
+        position: fixed; inset: 0; z-index: 99999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 32px 24px; background: #000000;
+        opacity: 1; transition: opacity .7s ease, transform .7s ease;
+    }
+    #tela-carregamento.fx-loader-out { opacity: 0; transform: translateY(-12px); pointer-events: none; }
+    .fx-load-glow {
+        position: absolute; left: 50%; top: 44%; width: 520px; height: 520px;
+        max-width: 130vw; max-height: 130vw; transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(0,255,102,.11) 0%, rgba(0,255,102,.035) 40%, rgba(0,0,0,0) 70%);
+        border-radius: 9999px; pointer-events: none;
+    }
+    .fx-load-marca { position: relative; text-align: center; line-height: 1; }
+    .fx-load-metodo {
+        display: block; font-size: 11px; font-weight: 500; letter-spacing: .58em; text-indent: .58em;
+        text-transform: uppercase; color: #707070;
+    }
+    .fx-load-bpo {
+        display: block; margin-top: 14px; font-size: 40px; font-weight: 800; letter-spacing: .12em; text-indent: .12em;
+        color: #00ff66; animation: fxLoadRespira 3.4s ease-in-out infinite;
+    }
+    @keyframes fxLoadRespira {
+        0%,100% { text-shadow: 0 0 20px rgba(0,255,102,.3); }
+        50%     { text-shadow: 0 0 34px rgba(0,255,102,.6); }
+    }
+    .fx-load-sub { margin-top: 14px; font-size: 11.5px; color: #666; }
+    .fx-load-track { position: relative; margin-top: 30px; width: 100%; max-width: 260px; }
+    .fx-load-rail { position: relative; height: 2px; width: 100%; border-radius: 9999px; background: #1a1a1a; overflow: hidden; }
+    .fx-load-fill {
+        position: relative; height: 100%; width: 0%; border-radius: 9999px;
+        background: linear-gradient(90deg, #00a844 0%, #00ff66 70%, #baffd4 100%);
+        box-shadow: 0 0 10px rgba(0,255,102,.8); transition: width .25s ease-out;
+    }
+    .fx-load-fill::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.8) 50%, rgba(255,255,255,0) 100%);
+        transform: translateX(-100%); animation: fxLoadShimmer 2s ease-in-out infinite;
+    }
+    @keyframes fxLoadShimmer { 0% { transform: translateX(-100%); } 65%,100% { transform: translateX(100%); } }
+    .fx-load-info { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .fx-load-status { font-size: 9.5px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #5c5c5c; }
+    .fx-load-pct {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11.5px; font-weight: 700;
+        color: #00ff66; text-shadow: 0 0 10px rgba(0,255,102,.5); font-variant-numeric: tabular-nums;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        #tela-carregamento { transition: opacity .3s ease; }
+        .fx-load-fill { transition: none; }
+        .fx-load-fill::after { animation: none; opacity: 0; }
+        .fx-load-bpo { animation: none; text-shadow: 0 0 24px rgba(0,255,102,.4); }
+    }
 </style>
 </head>
-<body class="min-h-screen text-gray-200 font-sans pb-28">
+<body class="min-h-screen text-gray-200 font-sans pb-28 fx-loading">
+
+    <div id="tela-carregamento">
+        <div class="fx-load-glow"></div>
+        <div class="fx-load-marca">
+            <span class="fx-load-metodo">M&eacute;todo</span>
+            <span class="fx-load-bpo">BPO</span>
+        </div>
+        <p class="fx-load-sub">Painel de Controle</p>
+        <div class="fx-load-track">
+            <div class="fx-load-rail"><div id="carregamento-barra" class="fx-load-fill"></div></div>
+            <div class="fx-load-info">
+                <span id="carregamento-status" class="fx-load-status">Conectando</span>
+                <span id="carregamento-pct" class="fx-load-pct">0%</span>
+            </div>
+        </div>
+    </div>
 
 <div id="tela-painel">
     <header class="sticky top-0 z-50 bg-[#0b0b0b]/95 backdrop-blur border-b border-[#1a1a1a] px-4 sm:px-6 py-3.5">
@@ -335,7 +408,7 @@
          enquanto grava no banco, depois vira um ✓ verde (ou um ✕ vermelho se
          der erro). Só pode ser fechado depois que o resultado aparece.
          =================================================================== -->
-    <div id="modal-salvar" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-5">
+    <div id="modal-salvar" class="fixed inset-0 z-[200] flex items-center justify-center p-5" style="display:none;">
         <div id="modal-salvar-backdrop" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
         <div class="relative bg-[#131313] border border-[#262626] rounded-2xl w-full max-w-xs p-7 flex flex-col items-center text-center gap-1 shadow-2xl">
             <div id="modal-salvar-icone" class="w-16 h-16 rounded-full flex items-center justify-center mb-2"></div>
@@ -429,6 +502,44 @@ window.addEventListener('beforeunload', (e) => {
     e.returnValue = '';
 });
 
+// ---------- Tela de carregamento inicial ----------
+const telaCarregamento = document.getElementById('tela-carregamento');
+const cargaBarra = document.getElementById('carregamento-barra');
+const cargaPct = document.getElementById('carregamento-pct');
+const cargaStatus = document.getElementById('carregamento-status');
+const cargaInicio = Date.now();
+const CARGA_TEMPO_MINIMO = 900; // evita "piscar" a tela em conexões muito rápidas
+let cargaProgresso = 0;
+let cargaEscondida = false;
+
+const cargaLoop = setInterval(() => {
+    if (cargaEscondida) return;
+    const teto = 90; // sobe suave até 90% e trava ali até os dados chegarem de verdade
+    cargaProgresso += Math.max(0.15, (teto - cargaProgresso) * 0.03);
+    if (cargaProgresso > teto) cargaProgresso = teto;
+    const mostrado = Math.floor(cargaProgresso);
+    if (cargaBarra) cargaBarra.style.width = mostrado + '%';
+    if (cargaPct) cargaPct.textContent = mostrado + '%';
+    if (cargaStatus) cargaStatus.textContent = (Date.now() - cargaInicio > 2500) ? 'Conectando ao banco de dados' : 'Conectando';
+}, 60);
+
+function esconderTelaCarregamento() {
+    if (cargaEscondida || !telaCarregamento) return;
+    cargaEscondida = true;
+    const espera = Math.max(0, CARGA_TEMPO_MINIMO - (Date.now() - cargaInicio));
+    setTimeout(() => {
+        clearInterval(cargaLoop);
+        if (cargaBarra) cargaBarra.style.width = '100%';
+        if (cargaPct) cargaPct.textContent = '100%';
+        if (cargaStatus) cargaStatus.textContent = 'Pronto';
+        setTimeout(() => {
+            telaCarregamento.classList.add('fx-loader-out');
+            document.body.classList.remove('fx-loading');
+            setTimeout(() => { telaCarregamento.remove(); }, 750);
+        }, 300);
+    }, espera);
+}
+
 // ---------- Carregamento inicial + escuta em tempo real ----------
 let painelIniciado = false;
 function iniciarPainel() {
@@ -445,6 +556,7 @@ function iniciarPainel() {
             dados = JSON.parse(JSON.stringify(conteudoPadrao));
             preencherFormulario();
             statusEl.innerHTML = '<span class="pulso-status pulso-alerta"></span>Não conectou ao banco de dados a tempo — editando uma cópia local. Toque em "Recarregar" antes de editar, se possível.';
+            esconderTelaCarregamento();
         }
     }, 6000);
 
@@ -457,6 +569,7 @@ function iniciarPainel() {
                 dados = novoConteudo || JSON.parse(JSON.stringify(conteudoPadrao));
                 preencherFormulario();
                 marcarLimpo('Conectado — pronto para editar.');
+                esconderTelaCarregamento();
             } else if (!sujo) {
                 statusEl.innerHTML = '<span class="pulso-status pulso-alerta"></span>Há uma versão mais nova salva — clique em "Recarregar" para atualizar a tela.';
             }
@@ -469,6 +582,7 @@ function iniciarPainel() {
             preencherFormulario();
         }
         statusEl.innerHTML = '<span class="pulso-status pulso-alerta"></span>Erro ao conectar ao banco de dados. Editando uma cópia local — toque em "Recarregar" para tentar de novo.';
+        esconderTelaCarregamento();
     }
 }
 
@@ -842,7 +956,7 @@ function travarFechamentoModal(travar) {
 
 function abrirModalSalvar() {
     if (autoFecharModal) { clearTimeout(autoFecharModal); autoFecharModal = null; }
-    modalSalvarEl.classList.remove('hidden');
+    modalSalvarEl.style.display = 'flex';
     modalSalvarIcone.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-2 bg-[#1a1a1a] border border-[#2a2a2a]';
     modalSalvarIcone.innerHTML = ICONE_SPINNER;
     modalSalvarTitulo.textContent = 'Salvando…';
@@ -867,7 +981,7 @@ function modalMostrarErro() {
 function fecharModalSalvar() {
     if (modalSalvarFechar.disabled) return;
     if (autoFecharModal) { clearTimeout(autoFecharModal); autoFecharModal = null; }
-    modalSalvarEl.classList.add('hidden');
+    modalSalvarEl.style.display = 'none';
 }
 modalSalvarFechar.addEventListener('click', fecharModalSalvar);
 modalSalvarBackdrop.addEventListener('click', fecharModalSalvar);
