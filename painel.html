@@ -622,13 +622,12 @@ function atualizarPreviewCapaVideo() {
     }
 }
 
-// ---------- Upload da capa do vídeo (convertida para base64, salva como texto no banco) ----------
+// ---------- Upload da capa do vídeo (convertida para base64 com compressão, salva como texto no banco) ----------
 document.getElementById('input-capa-video').addEventListener('change', (e) => {
     const arquivo = e.target.files && e.target.files[0];
     if (!arquivo) return;
 
-    // Se os dados ainda não chegaram do banco por algum motivo, cria uma
-    // cópia local agora — assim o upload NUNCA falha silenciosamente.
+    // Se os dados ainda não chegaram do banco por algum motivo, cria uma cópia local
     if (!dados) {
         dados = JSON.parse(JSON.stringify(conteudoPadrao));
         preencherFormulario();
@@ -640,29 +639,63 @@ document.getElementById('input-capa-video').addEventListener('change', (e) => {
         return;
     }
 
-    // O banco de dados tem um limite de ~1 MB por registro (somando todos
-    // os campos). Como a imagem em texto (base64) fica ~33% maior que o
-    // arquivo original, avisamos antes de imagens grandes demais.
-    const LIMITE_AVISO = 700 * 1024;
-    if (arquivo.size > LIMITE_AVISO) {
-        const tamanhoMb = (arquivo.size / 1024 / 1024).toFixed(1);
-        const prosseguir = confirm('Essa imagem tem ' + tamanhoMb + ' MB — é bem grande e pode não caber no banco de dados (o limite é de cerca de 1 MB somando tudo). O ideal é usar uma imagem comprimida, algo em torno de 200–500 KB. Deseja usá-la mesmo assim?');
-        if (!prosseguir) { e.target.value = ''; return; }
-    }
-
     const leitor = new FileReader();
-    leitor.onload = () => {
-        setEmCaminho(dados, 'hero.capaVideo', leitor.result); // salva como texto: "data:image/...;base64,...."
-        atualizarPreviewCapaVideo();
-        marcarSujo();
+    leitor.onload = (evento) => {
+        // Cria um objeto de imagem nativo para carregar o arquivo
+        const img = new Image();
+        img.onload = () => {
+            // Cria um canvas invisível para manipular a imagem
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Define um tamanho máximo (ex: Full HD) para evitar estourar o limite
+            const MAX_LARGURA = 1920;
+            const MAX_ALTURA = 1080;
+            let largura = img.width;
+            let altura = img.height;
+
+            // Calcula a proporção correta se precisar reduzir
+            if (largura > altura) {
+                if (largura > MAX_LARGURA) {
+                    altura *= MAX_LARGURA / largura;
+                    largura = MAX_LARGURA;
+                }
+            } else {
+                if (altura > MAX_ALTURA) {
+                    largura *= MAX_ALTURA / altura;
+                    altura = MAX_ALTURA;
+                }
+            }
+
+            canvas.width = largura;
+            canvas.height = altura;
+
+            // Desenha a imagem no canvas com o novo tamanho
+            ctx.drawImage(img, 0, 0, largura, altura);
+
+            // COMPRESSÃO: Exporta do canvas forçando JPEG com 70% de qualidade (0.7)
+            // Isso garante que mesmo PNGs pesados virem textos leves em Base64
+            const base64Comprimida = canvas.toDataURL('image/jpeg', 0.7);
+
+            // Salva a string comprimida no objeto 'dados'
+            setEmCaminho(dados, 'hero.capaVideo', base64Comprimida); 
+            atualizarPreviewCapaVideo();
+            marcarSujo();
+        };
+        
+        // Coloca o resultado bruto dentro da tag de imagem para ativar o onload acima
+        img.src = evento.target.result;
     };
+    
     leitor.onerror = () => { alert('Não foi possível ler essa imagem. Tente outro arquivo.'); };
+    // Lê o arquivo do computador
     leitor.readAsDataURL(arquivo);
 });
+
 document.getElementById('btn-remover-capa-video').addEventListener('click', () => {
     if (!dados) return;
     if (!dados.hero || !dados.hero.capaVideo) return;
-    if (!confirm('Remover a imagem de capa e voltar para a padrão do repositório?')) return;
+    if (!confirm('Remover a imagem de capa e voltar para a imagem padrão do repositório?')) return;
     setEmCaminho(dados, 'hero.capaVideo', '');
     document.getElementById('input-capa-video').value = '';
     atualizarPreviewCapaVideo();
