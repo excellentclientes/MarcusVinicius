@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Controle — Método BPO</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    body { background-color: #0b0b0b; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background-color: #2a2a2a; border-radius: 8px; }
+    .campo-label { display:block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #7fffb0; margin-bottom: 4px; }
+    .campo-input, .campo-textarea {
+        width: 100%; background:#161616; border:1px solid #2a2a2a; border-radius:8px;
+        padding: 10px 12px; color:#fff; font-size: 14px; outline: none;
+    }
+    .campo-input:focus, .campo-textarea:focus { border-color:#00ff66; box-shadow: 0 0 0 2px rgba(0,255,102,.15); }
+    .campo-textarea { min-height: 70px; resize: vertical; }
+    .card-editor { background:#121212; border:1px solid #222; border-radius:14px; padding:16px; }
+    .btn-primario {
+        background:#00ff66; color:#0b0b0b; font-weight:800; border-radius:10px; padding:10px 18px;
+        font-size:13px; letter-spacing:.03em; transition: all .15s ease;
+    }
+    .btn-primario:hover { background:#fff; transform: translateY(-1px); }
+    .btn-secundario {
+        background:#1a1a1a; color:#ddd; border:1px solid #2a2a2a; font-weight:700; border-radius:10px; padding:9px 16px; font-size:13px;
+    }
+    .btn-secundario:hover { border-color:#00ff66; color:#00ff66; }
+    .btn-remover { color:#ff6b6b; font-size:12px; font-weight:700; }
+    .btn-remover:hover { text-decoration: underline; }
+    .secao-titulo { font-size: 18px; font-weight: 800; color:#fff; letter-spacing:-.01em; }
+    .secao-sub { font-size: 12px; color:#888; }
+</style>
+</head>
+<body class="min-h-screen text-gray-200 font-sans pb-32">
+
+<div id="tela-painel">
+    <header class="sticky top-0 z-50 bg-[#0b0b0b]/95 backdrop-blur border-b border-[#1a1a1a] px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+        <div>
+            <h1 class="text-lg font-black text-white">Painel de Controle <span class="text-[#00ff66]">BPO</span></h1>
+            <p id="status-conexao" class="text-[11px] text-gray-500">Carregando dados...</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="btn-recarregar" class="btn-secundario">Recarregar</button>
+            <button id="btn-salvar" class="btn-primario">Salvar alterações</button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-10">
+
+        <!-- HERO -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">Topo da página (Hero)</span><p class="secao-sub">Selo, título, subtítulo e botão principal.</p></div>
+            <div class="card-editor grid gap-3">
+                <div><span class="campo-label">Selo acima do título</span><input class="campo-input" data-campo="hero.badge" /></div>
+                <div class="grid sm:grid-cols-2 gap-3">
+                    <div><span class="campo-label">Título (parte 1)</span><input class="campo-input" data-campo="hero.tituloPre" /></div>
+                    <div><span class="campo-label">Título em destaque (verde)</span><input class="campo-input" data-campo="hero.tituloDestaque" /></div>
+                </div>
+                <div><span class="campo-label">Subtítulo</span><input class="campo-input" data-campo="hero.subtitulo" /></div>
+                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="hero.descricao"></textarea></div>
+                <div><span class="campo-label">Selos (marcadores com ✔ abaixo da descrição)</span></div>
+                <div id="lista-selos" class="grid sm:grid-cols-2 gap-2"></div>
+                <button class="btn-secundario self-start" data-add="hero.selos" data-modelo='"Novo selo"'>+ Adicionar selo</button>
+                <div><span class="campo-label">Texto do botão principal</span><input class="campo-input" data-campo="hero.botaoTexto" /></div>
+            </div>
+        </section>
+
+        <!-- VÍDEO DE APRESENTAÇÃO -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">Vídeo de apresentação</span><p class="secao-sub">Capa (miniatura) mostrada antes do play. O vídeo tocado é sempre o arquivo "apresentacao.mp4" enviado no GitHub.</p></div>
+            <div class="card-editor grid gap-3">
+                <div>
+                    <span class="campo-label">Imagem de capa do vídeo</span>
+                    <div class="flex items-center gap-4">
+                        <img id="preview-capa-video" src="" alt="Prévia da capa" class="hidden w-32 aspect-video object-cover rounded-lg border border-[#2a2a2a]" />
+                        <div class="flex flex-col gap-2">
+                            <input id="input-capa-video" type="file" accept="image/*" class="text-xs text-gray-400" />
+                            <button id="btn-remover-capa-video" type="button" class="btn-remover self-start">Remover imagem (usar a padrão do repositório)</button>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-gray-500 mt-2">A imagem é salva direto no banco de dados (em base64), então não precisa subir nenhum arquivo de imagem no GitHub.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- STATS -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">Números de prova social</span><p class="secao-sub">A barra de números logo abaixo do topo.</p></div>
+            <div id="lista-stats" class="grid sm:grid-cols-2 gap-3"></div>
+            <button class="btn-secundario self-start" data-add="stats" data-modelo='{"valor":"Novo valor","label":"Nova legenda"}'>+ Adicionar número</button>
+        </section>
+
+        <!-- BENEFITS -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">O que você vai aprender</span><p class="secao-sub">Título da seção e os cards da grade de aprendizado.</p></div>
+            <div class="card-editor grid gap-3">
+                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="benefits.tag" /></div>
+                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="benefits.titulo" /></div>
+                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="benefits.descricao"></textarea></div>
+            </div>
+            <div id="lista-benefits" class="flex flex-col gap-3"></div>
+            <button class="btn-secundario self-start" data-add="benefits.cards" data-modelo='{"titulo":"Novo card","descricao":"Descrição do card"}'>+ Adicionar card</button>
+        </section>
+
+        <!-- PERFIL ALUNO -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">Perfil do aluno ideal</span><p class="secao-sub">Lista de "esse curso é para você que...".</p></div>
+            <div class="card-editor grid gap-3">
+                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="perfilAluno.tag" /></div>
+                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="perfilAluno.titulo" /></div>
+                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="perfilAluno.descricao"></textarea></div>
+            </div>
+            <div id="lista-perfil" class="flex flex-col gap-2"></div>
+            <button class="btn-secundario self-start" data-add="perfilAluno.itens" data-modelo='"Novo item"'>+ Adicionar item</button>
+        </section>
+
+        <!-- INCLUSO -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">O que está incluso no treinamento</span><p class="secao-sub">Lista de itens inclusos (pode marcar como "Destaque").</p></div>
+            <div class="card-editor grid gap-3">
+                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="incluso.tag" /></div>
+                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="incluso.titulo" /></div>
+                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="incluso.descricao"></textarea></div>
+            </div>
+            <div id="lista-incluso" class="flex flex-col gap-2"></div>
+            <button class="btn-secundario self-start" data-add="incluso.itens" data-modelo='{"texto":"Novo item incluso","destaque":false}'>+ Adicionar item</button>
+        </section>
+
+        <!-- DIFFERENTIALS -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">Nossos diferenciais</span><p class="secao-sub">Cards de "Por que escolher o BPO".</p></div>
+            <div class="card-editor grid gap-3">
+                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="differentials.tag" /></div>
+                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="differentials.titulo" /></div>
+                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="differentials.descricao"></textarea></div>
+            </div>
+            <div id="lista-differentials" class="flex flex-col gap-3"></div>
+            <button class="btn-secundario self-start" data-add="differentials.cards" data-modelo='{"titulo":"Novo diferencial","descricao":"Descrição do diferencial"}'>+ Adicionar card</button>
+        </section>
+
+        <!-- WARRANTY -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">Garantia</span><p class="secao-sub">Bloco "Você não tem risco".</p></div>
+            <div class="card-editor grid gap-3">
+                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="warranty.titulo" /></div>
+                <div><span class="campo-label">Texto (aceita &lt;strong&gt;negrito&lt;/strong&gt;)</span><textarea class="campo-textarea" data-campo="warranty.texto"></textarea></div>
+            </div>
+        </section>
+
+        <!-- PRICING -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">Preço e checkout</span><p class="secao-sub">Valores, parcelamento e link de pagamento.</p></div>
+            <div class="card-editor grid gap-3">
+                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="pricing.tag" /></div>
+                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="pricing.titulo" /></div>
+                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="pricing.descricao"></textarea></div>
+                <div class="grid sm:grid-cols-2 gap-3">
+                    <div><span class="campo-label">Selo de desconto (ex: 70% OFF)</span><input class="campo-input" data-campo="pricing.desconto" /></div>
+                    <div><span class="campo-label">Preço "de" (riscado)</span><input class="campo-input" data-campo="pricing.precoDe" /></div>
+                    <div><span class="campo-label">Preço "por"</span><input class="campo-input" data-campo="pricing.precoPor" /></div>
+                    <div><span class="campo-label">Texto de parcelamento</span><input class="campo-input" data-campo="pricing.parcelas" /></div>
+                </div>
+                <div><span class="campo-label">Link de pagamento (Hotmart)</span><input class="campo-input" data-campo="pricing.linkPagamento" /></div>
+                <div><span class="campo-label">Texto do botão de compra</span><input class="campo-input" data-campo="pricing.botaoTexto" /></div>
+            </div>
+        </section>
+
+        <!-- TESTIMONIALS -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">Depoimentos (WhatsApp)</span><p class="secao-sub">Cada depoimento é uma conversa simulada. A primeira mensagem deve ser "recebida"; a resposta, "enviada".</p></div>
+            <div id="lista-testimonials" class="flex flex-col gap-4"></div>
+            <button class="btn-secundario self-start" data-add="testimonials" data-modelo='{"iniciais":"AB","nome":"Novo Aluno","mensagens":[{"tipo":"recebida","texto":"Depoimento do aluno...","hora":"12:00"},{"tipo":"enviada","texto":"Que bom, obrigado!","hora":"12:02"}]}'>+ Adicionar depoimento</button>
+        </section>
+
+        <!-- FAQ -->
+        <section class="flex flex-col gap-4">
+            <div><span class="secao-titulo">Perguntas frequentes</span><p class="secao-sub">Perguntas e respostas do FAQ.</p></div>
+            <div id="lista-faq" class="flex flex-col gap-3"></div>
+            <button class="btn-secundario self-start" data-add="faq" data-modelo='{"pergunta":"Nova pergunta?","resposta":"Resposta da pergunta."}'>+ Adicionar pergunta</button>
+        </section>
+
+    </main>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-[#0b0b0b]/95 backdrop-blur border-t border-[#1a1a1a] px-4 sm:px-6 py-4 flex items-center justify-between gap-3 z-40">
+        <p id="mensagem-salvar" class="text-xs text-gray-500"></p>
+        <button id="btn-salvar-rodape" class="btn-primario">Salvar alterações</button>
+    </div>
+</div>
+
+<script type="module">
+import { conteudoPadrao, buscarConteudo, salvarConteudo, ouvirConteudo } from './dados.js';
+
+let dados = null; // conteúdo atual em edição (objeto JS)
+
+// ---------- Utilitários de caminho (ex.: "hero.selos.0") ----------
+function getEmCaminho(obj, caminho) {
+    const partes = caminho.split('.');
+    let atual = obj;
+    for (const parte of partes) {
+        if (atual == null) return undefined;
+        atual = atual[parte];
+    }
+    return atual;
+}
+function setEmCaminho(obj, caminho, valor) {
+    const partes = caminho.split('.');
+    let atual = obj;
+    for (let i = 0; i < partes.length - 1; i++) {
+        const parte = partes[i];
+        if (atual[parte] == null) atual[parte] = /^\d+$/.test(partes[i + 1]) ? [] : {};
+        atual = atual[parte];
+    }
+    atual[partes[partes.length - 1]] = valor;
+}
+
+// ---------- Carregamento inicial + escuta em tempo real ----------
+let painelIniciado = false;
+function iniciarPainel() {
+    if (painelIniciado) return;
+    painelIniciado = true;
+    const statusEl = document.getElementById('status-conexao');
+    ouvirConteudo((novoConteudo) => {
+        // Só sobrescreve os campos em edição na primeira carga, para não
+        // atrapalhar quem está digitando caso outra pessoa edite ao mesmo tempo.
+        if (!dados) {
+            dados = novoConteudo || JSON.parse(JSON.stringify(conteudoPadrao));
+            preencherFormulario();
+            statusEl.textContent = 'Conectado ao Firebase — pronto para editar.';
+        } else {
+            statusEl.textContent = 'Conectado ao Firebase (há uma versão mais nova salva — clique em "Recarregar" para atualizar a tela).';
+        }
+    });
+}
+
+document.getElementById('btn-recarregar').addEventListener('click', async () => {
+    dados = await buscarConteudo();
+    preencherFormulario();
+    document.getElementById('status-conexao').textContent = 'Dados recarregados.';
+});
+
+// ---------- Preenche todos os campos simples (inputs com data-campo) ----------
+function preencherFormulario() {
+    document.querySelectorAll('[data-campo]').forEach((el) => {
+        const valor = getEmCaminho(dados, el.dataset.campo);
+        el.value = valor == null ? '' : valor;
+    });
+    atualizarPreviewCapaVideo();
+    renderizarListaSimples('hero.selos', 'lista-selos');
+    renderizarListaStats();
+    renderizarListaBenefits();
+    renderizarListaSimples('perfilAluno.itens', 'lista-perfil');
+    renderizarListaIncluso();
+    renderizarListaBenefitsGenerico('differentials.cards', 'lista-differentials', 'diferencial');
+    renderizarListaTestimonials();
+    renderizarListaFaq();
+}
+
+function atualizarPreviewCapaVideo() {
+    const img = document.getElementById('preview-capa-video');
+    const capa = dados && dados.hero ? dados.hero.capaVideo : '';
+    if (capa) {
+        img.src = capa;
+        img.classList.remove('hidden');
+    } else {
+        img.src = '';
+        img.classList.add('hidden');
+    }
+}
+
+// ---------- Upload da capa do vídeo (convertida para base64) ----------
+document.getElementById('input-capa-video').addEventListener('change', (e) => {
+    const arquivo = e.target.files && e.target.files[0];
+    if (!arquivo || !dados) return;
+    const leitor = new FileReader();
+    leitor.onload = () => {
+        setEmCaminho(dados, 'hero.capaVideo', leitor.result); // já vem como data:image/...;base64,...
+        atualizarPreviewCapaVideo();
+    };
+    leitor.readAsDataURL(arquivo);
+});
+document.getElementById('btn-remover-capa-video').addEventListener('click', () => {
+    if (!dados) return;
+    setEmCaminho(dados, 'hero.capaVideo', '');
+    document.getElementById('input-capa-video').value = '';
+    atualizarPreviewCapaVideo();
+});
+
+// Grava no objeto `dados` toda vez que um campo simples é alterado
+document.addEventListener('input', (e) => {
+    if (e.target.matches('[data-campo]') && dados) {
+        setEmCaminho(dados, e.target.dataset.campo, e.target.value);
+    }
+});
+
+// ---------- Botões "+ Adicionar" ----------
+document.querySelectorAll('[data-add]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+        const caminho = btn.dataset.add;
+        const modelo = JSON.parse(btn.dataset.modelo);
+        const lista = getEmCaminho(dados, caminho) || [];
+        lista.push(JSON.parse(JSON.stringify(modelo)));
+        setEmCaminho(dados, caminho, lista);
+        preencherFormulario();
+    });
+});
+
+// ---------- Listas de cards genéricos (título + descrição) ----------
+function renderizarListaBenefits() { renderizarListaBenefitsGenerico('benefits.cards', 'lista-benefits', 'card'); }
+
+function renderizarListaBenefitsGenerico(caminho, idContainer, rotulo) {
+    const wrap = document.getElementById(idContainer);
+    wrap.innerHTML = '';
+    const lista = getEmCaminho(dados, caminho) || [];
+    lista.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className = 'card-editor grid gap-2';
+        div.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span class="campo-label mb-0">${rotulo} ${i + 1}</span>
+                <button class="btn-remover" data-remover="${caminho}.${i}">Remover</button>
+            </div>
+            <input class="campo-input" data-campo="${caminho}.${i}.titulo" placeholder="Título" />
+            <textarea class="campo-textarea" data-campo="${caminho}.${i}.descricao" placeholder="Descrição"></textarea>
+        `;
+        wrap.appendChild(div);
+    });
+    aplicarValoresNoContainer(wrap);
+    ativarBotoesRemover(wrap, caminho);
+}
+
+// ---------- Lista simples de strings (perfil do aluno) ----------
+function renderizarListaSimples(caminho, idContainer) {
+    const wrap = document.getElementById(idContainer);
+    wrap.innerHTML = '';
+    const lista = getEmCaminho(dados, caminho) || [];
+    lista.forEach((_, i) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2';
+        div.innerHTML = `
+            <input class="campo-input" data-campo="${caminho}.${i}" />
+            <button class="btn-remover flex-shrink-0" data-remover="${caminho}.${i}">Remover</button>
+        `;
+        wrap.appendChild(div);
+    });
+    aplicarValoresNoContainer(wrap);
+    ativarBotoesRemover(wrap, caminho);
+}
+
+// ---------- Lista de números de prova social (valor + legenda) ----------
+function renderizarListaStats() {
+    const caminho = 'stats';
+    const wrap = document.getElementById('lista-stats');
+    wrap.innerHTML = '';
+    const lista = getEmCaminho(dados, caminho) || [];
+    lista.forEach((_, i) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2';
+        div.innerHTML = `
+            <input class="campo-input" data-campo="${caminho}.${i}.valor" placeholder="Valor (ex: 4.892+)" />
+            <input class="campo-input" data-campo="${caminho}.${i}.label" placeholder="Legenda (ex: Alunos Formados)" />
+            <button class="btn-remover flex-shrink-0" data-remover="${caminho}.${i}">Remover</button>
+        `;
+        wrap.appendChild(div);
+    });
+    aplicarValoresNoContainer(wrap);
+    ativarBotoesRemover(wrap, caminho);
+}
+
+// ---------- Lista "incluso" (texto + destaque) ----------
+function renderizarListaIncluso() {
+    const caminho = 'incluso.itens';
+    const wrap = document.getElementById('lista-incluso');
+    wrap.innerHTML = '';
+    const lista = getEmCaminho(dados, caminho) || [];
+    lista.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2';
+        div.innerHTML = `
+            <input class="campo-input" data-campo="${caminho}.${i}.texto" placeholder="Texto do item" />
+            <label class="flex items-center gap-1.5 text-xs text-gray-400 flex-shrink-0">
+                <input type="checkbox" data-destaque="${caminho}.${i}.destaque" ${item.destaque ? 'checked' : ''} /> Destaque
+            </label>
+            <button class="btn-remover flex-shrink-0" data-remover="${caminho}.${i}">Remover</button>
+        `;
+        wrap.appendChild(div);
+    });
+    aplicarValoresNoContainer(wrap);
+    ativarBotoesRemover(wrap, caminho);
+    wrap.querySelectorAll('[data-destaque]').forEach((chk) => {
+        chk.addEventListener('change', () => setEmCaminho(dados, chk.dataset.destaque, chk.checked));
+    });
+}
+
+// ---------- Depoimentos (WhatsApp) ----------
+function renderizarListaTestimonials() {
+    const caminho = 'testimonials';
+    const wrap = document.getElementById('lista-testimonials');
+    wrap.innerHTML = '';
+    const lista = getEmCaminho(dados, caminho) || [];
+    lista.forEach((dep, i) => {
+        const div = document.createElement('div');
+        div.className = 'card-editor grid gap-2';
+        let msgsHtml = '';
+        (dep.mensagens || []).forEach((_, j) => {
+            msgsHtml += `
+                <div class="grid grid-cols-[110px_1fr_70px_auto] gap-2 items-center">
+                    <select class="campo-input" data-campo="${caminho}.${i}.mensagens.${j}.tipo">
+                        <option value="recebida">Recebida</option>
+                        <option value="enviada">Enviada</option>
+                    </select>
+                    <input class="campo-input" data-campo="${caminho}.${i}.mensagens.${j}.texto" placeholder="Mensagem" />
+                    <input class="campo-input" data-campo="${caminho}.${i}.mensagens.${j}.hora" placeholder="Hora" />
+                    <button class="btn-remover" data-remover="${caminho}.${i}.mensagens.${j}">Remover</button>
+                </div>`;
+        });
+        div.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span class="campo-label mb-0">Depoimento ${i + 1}</span>
+                <button class="btn-remover" data-remover="${caminho}.${i}">Remover depoimento</button>
+            </div>
+            <div class="grid grid-cols-[80px_1fr] gap-2">
+                <input class="campo-input" data-campo="${caminho}.${i}.iniciais" placeholder="Iniciais" maxlength="2" />
+                <input class="campo-input" data-campo="${caminho}.${i}.nome" placeholder="Nome do aluno" />
+            </div>
+            <div class="flex flex-col gap-2 mt-1">${msgsHtml}</div>
+            <button class="btn-secundario self-start text-xs" data-add-msg="${caminho}.${i}.mensagens">+ Adicionar mensagem</button>
+        `;
+        wrap.appendChild(div);
+    });
+    aplicarValoresNoContainer(wrap);
+    ativarBotoesRemover(wrap, caminho);
+    wrap.querySelectorAll('[data-add-msg]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const cam = btn.dataset.addMsg;
+            const lista2 = getEmCaminho(dados, cam) || [];
+            lista2.push({ tipo: 'recebida', texto: 'Nova mensagem...', hora: '12:00' });
+            setEmCaminho(dados, cam, lista2);
+            renderizarListaTestimonials();
+        });
+    });
+}
+
+// ---------- FAQ ----------
+function renderizarListaFaq() {
+    const caminho = 'faq';
+    const wrap = document.getElementById('lista-faq');
+    wrap.innerHTML = '';
+    const lista = getEmCaminho(dados, caminho) || [];
+    lista.forEach((_, i) => {
+        const div = document.createElement('div');
+        div.className = 'card-editor grid gap-2';
+        div.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span class="campo-label mb-0">Pergunta ${i + 1}</span>
+                <button class="btn-remover" data-remover="${caminho}.${i}">Remover</button>
+            </div>
+            <input class="campo-input" data-campo="${caminho}.${i}.pergunta" placeholder="Pergunta" />
+            <textarea class="campo-textarea" data-campo="${caminho}.${i}.resposta" placeholder="Resposta"></textarea>
+        `;
+        wrap.appendChild(div);
+    });
+    aplicarValoresNoContainer(wrap);
+    ativarBotoesRemover(wrap, caminho);
+}
+
+// ---------- Auxiliares ----------
+function aplicarValoresNoContainer(wrap) {
+    wrap.querySelectorAll('[data-campo]').forEach((el) => {
+        const valor = getEmCaminho(dados, el.dataset.campo);
+        el.value = valor == null ? '' : valor;
+    });
+}
+
+function ativarBotoesRemover(wrap, caminhoBase) {
+    wrap.querySelectorAll('[data-remover]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const caminho = btn.dataset.remover;
+            const partes = caminho.split('.');
+            const indice = parseInt(partes.pop(), 10);
+            const caminhoLista = partes.join('.');
+            const lista = getEmCaminho(dados, caminhoLista);
+            if (Array.isArray(lista)) {
+                lista.splice(indice, 1);
+                setEmCaminho(dados, caminhoLista, lista);
+            }
+            preencherFormulario();
+        });
+    });
+}
+
+// ---------- Salvar no Firestore ----------
+async function salvar() {
+    const msgEl = document.getElementById('mensagem-salvar');
+    msgEl.textContent = 'Salvando...';
+    try {
+        await salvarConteudo(dados);
+        msgEl.textContent = 'Alterações salvas! O site já foi atualizado.';
+        setTimeout(() => { msgEl.textContent = ''; }, 4000);
+    } catch (erro) {
+        console.error(erro);
+        msgEl.textContent = 'Erro ao salvar. Verifique sua conexão e tente novamente.';
+    }
+}
+document.getElementById('btn-salvar').addEventListener('click', salvar);
+document.getElementById('btn-salvar-rodape').addEventListener('click', salvar);
+
+// Como não há mais tela de login, o painel já inicia direto.
+iniciarPainel();
+</script>
+</body>
+</html>

@@ -59,13 +59,13 @@ service cloud.firestore {
 
 > ⚠️ **Sobre segurança:** a regra `allow write: if true` permite que
 > **qualquer pessoa que descubra a configuração do Firebase** (que fica
-> visível no código do site, isso é normal) consiga alterar o conteúdo. A
-> senha do `painel.html` é só uma proteção visual simples — ela não impede
-> alguém de escrever diretamente na API do Firestore. Para produção,
-> recomendo ativar o **Firebase Authentication** (por exemplo, login por
-> e-mail/senha só para o cliente) e trocar a regra de escrita para algo como:
-> `allow write: if request.auth != null;`. Posso te ajudar a configurar isso
-> se quiser — é um passo a mais, mas deixa o painel realmente protegido.
+> visível no código do site, isso é normal) consiga alterar o conteúdo. O
+> `painel.html` não tem senha nem login — quem tiver acesso ao arquivo/link
+> consegue editar tudo. Para produção, recomendo ativar o **Firebase
+> Authentication** (por exemplo, login por e-mail/senha só para o cliente) e
+> trocar a regra de escrita para algo como: `allow write: if request.auth !=
+> null;`. Posso te ajudar a configurar isso se quiser — é um passo a mais,
+> mas deixa o painel realmente protegido.
 
 4. Não precisa criar o documento manualmente: na primeira vez que o cliente
    clicar em **Salvar alterações** no painel, o documento `site/conteudo` é
@@ -80,10 +80,10 @@ service cloud.firestore {
 2. Se for usar **GitHub Pages**, ative em Settings → Pages, apontando para a
    branch/pasta onde estão os arquivos.
 3. `painel.html` **não precisa** estar público — mas se quiser subir junto
-   (por exemplo numa pasta `/admin`), funciona normalmente, só que qualquer
-   pessoa com o link e a senha vai conseguir acessá-lo. Se preferir mais
-   discrição, hospede `painel.html` separadamente (ou dê um nome de arquivo
-   difícil de adivinhar) e envie o link só para o cliente.
+   (por exemplo numa pasta `/admin`), funciona normalmente. Como ele **não
+   tem senha**, qualquer pessoa com o link vai conseguir editar o site. Se
+   preferir mais discrição, hospede `painel.html` separadamente (ou dê um
+   nome de arquivo difícil de adivinhar) e envie o link só para o cliente.
 
 ---
 
@@ -94,12 +94,14 @@ service cloud.firestore {
   **Firebase Authentication** (ver observação de segurança no Passo 1) ou
   simplesmente não divulgar o link/arquivo publicamente.
 
-- No painel, o cliente consegue:
-  - Editar o título, subtítulo, selos e botão do topo (Hero).
-  - Trocar a **imagem de capa do vídeo** (a miniatura mostrada antes do
-    play) — a imagem é salva direto no banco de dados (em base64), sem
-    precisar subir nada no GitHub.
-  - Editar os 4 números de prova social (estatísticas).
+- No painel, o cliente consegue **ver o conteúdo atual, editar e excluir**
+  qualquer parte, além de **adicionar quantos itens quiser** em todas as
+  listas:
+  - Editar o título, subtítulo, botão do topo (Hero) e a imagem de capa do
+    vídeo (salva direto no banco em base64, sem precisar subir nada no
+    GitHub).
+  - **Adicionar, editar ou remover** selos (✔) abaixo da descrição do topo.
+  - **Adicionar, editar ou remover** números de prova social (estatísticas).
   - Editar título/descrição e **adicionar, editar ou remover** cards de:
     "O que você vai aprender", "Perfil do aluno ideal", "O que está incluso",
     "Nossos diferenciais".
@@ -115,21 +117,16 @@ service cloud.firestore {
 ## Passo 4 — Vídeo de apresentação
 
 O vídeo em si **não fica salvo no Firestore** (arquivos de vídeo são grandes
-demais para isso). O que fica salvo no banco de dados é só:
+demais para isso). O que fica salvo no banco de dados é só a **imagem de
+capa** (miniatura antes do play), enviada pelo painel e guardada em base64.
 
-- a **imagem de capa** (miniatura antes do play), enviada pelo painel e
-  guardada em base64;
-- o **nome do arquivo de vídeo**, editável no painel (padrão:
-  `apresentacao.mp4`).
+O nome do arquivo de vídeo é fixo: **`apresentacao.mp4`**.
 
 Para o vídeo realmente funcionar:
 
-1. Suba o arquivo de vídeo (ex.: `apresentacao.mp4`) para a **mesma pasta**
-   do `index.html` no GitHub.
-2. Confira se o nome do arquivo no painel (campo "Nome do arquivo de vídeo")
-   é exatamente igual ao nome do arquivo enviado (maiúsculas/minúsculas e
-   acentos importam).
-3. Quando o visitante clicar em "Assistir Apresentação", o site troca a
+1. Suba o arquivo de vídeo com esse nome exato, `apresentacao.mp4`, para a
+   **mesma pasta** do `index.html` no GitHub.
+2. Quando o visitante clicar em "Assistir Apresentação", o site troca a
    miniatura por um player de vídeo (com controles) que toca o arquivo
    direto na página — sem sair do site e sem depender de YouTube/Vimeo.
 
@@ -153,5 +150,6 @@ Para o vídeo realmente funcionar:
   acesso ao arquivo/link do `painel.html` consegue editar o site. Se isso for
   um problema, me avise para configurarmos uma proteção real (Firebase
   Authentication).
-- Campos de "quantidade fixa" (os 4 números de estatística e os 4 selos do
-  topo) não têm botão de adicionar/remover — são sempre 4, só o texto muda.
+- **Todas as listas agora são maleáveis:** selos, estatísticas, cards de
+  aprendizado/perfil/incluso/diferenciais, depoimentos e FAQ podem ter
+  quantos itens você quiser — adicionar, editar e excluir livremente.
