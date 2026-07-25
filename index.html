@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Método BPO</title>
+    
+    <!-- Motor do Tailwind CSS injetado diretamente para renderizar as classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Estilos personalizados que não fazem parte do Tailwind padrão -->
+    <style>
+        .text-glow-green {
+            text-shadow: 0 0 12px rgba(0, 255, 102, 0.6);
+        }
+        .box-glow-green {
+            box-shadow: 0 0 30px rgba(0, 255, 102, 0.25);
+        }
+        .animate-ping-slow {
+            animation: ping 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+        body {
+            background-color: #0b0b0b;
+        }
+        html { 
+            scroll-behavior: smooth; 
+        }
+
+        /* ==========================================================
+           EFEITOS ADICIONAIS: animações de surgimento, clique neon
+           e ajustes de responsividade para celular
+           ========================================================== */
+
+        /* Deixa o toque mais parecido com um app nativo no iOS.
+           OBS: não usar "overflow-x: hidden" no html/body aqui, pois
+           isso quebra o position:sticky do cabeçalho/barra de progresso. */
+        html, body {
+            -webkit-overflow-scrolling: touch;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ---- Animação de SURGIMENTO ao rolar a página ---- */
+        .reveal-init {
+            opacity: 0;
+            transform: translateY(28px);
+        }
+        .reveal-init.reveal-play {
+            animation: fxRevealUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fxRevealUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---- Efeito de contorno NEON VERDE ao clicar nos cards ---- */
+        .fx-clickable-card {
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .fx-clickable-card:active {
+            transform: scale(0.985);
+        }
+        .fx-neon-click {
+            animation: fxNeonPulse 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: inherit;
+        }
+        @keyframes fxNeonPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 102, 0), 0 0 0 0 rgba(0, 255, 102, 0);
+            }
+            28% {
+                box-shadow: 0 0 0 2px rgba(0, 255, 102, 0.95), 0 0 35px 6px rgba(0, 255, 102, 0.5);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 102, 0), 0 0 0 0 rgba(0, 255, 102, 0);
+            }
+        }
+
+        /* ---- Efeito de BRILHO (reflexo) ao pressionar os botões principais ---- */
+        .fx-shine-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        .fx-shine-btn::after {
+            content: '';
+            position: absolute;
+            top: -30%;
+            left: -75%;
+            width: 45%;
+            height: 160%;
+            background: linear-gradient(115deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-20deg);
+            pointer-events: none;
+            opacity: 0;
+        }
+        .fx-shine-play::after {
+            animation: fxShineSweep 0.85s ease-out;
+        }
+        @keyframes fxShineSweep {
+            0%   { left: -75%; opacity: 0; }
+            12%  { opacity: 1; }
+            100% { left: 130%; opacity: 0; }
+        }
+
+        /* Respeita usuários que preferem menos movimento na tela */
+        @media (prefers-reduced-motion: reduce) {
+            .reveal-init { opacity: 1 !important; transform: none !important; animation: none !important; }
+            .fx-neon-click { animation: none !important; }
+            .fx-clickable-card:active { transform: none !important; }
+            .fx-shine-play::after { animation: none !important; }
+            html { scroll-behavior: auto; }
+        }
+
+        /* ---- Scrollbar fina dentro da caixa de depoimentos (altura fixa) ---- */
+        .fx-chat-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+        }
+        .fx-chat-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .fx-chat-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .fx-chat-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.25);
+            border-radius: 10px;
+        }
+
+        /* ---- Ajustes finos para celular ---- */
+        @media (max-width: 400px) {
+            h1.font-display { letter-spacing: -0.01em; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="min-h-screen bg-[#0b0b0b] font-sans antialiased selection:bg-[#00ff66] selection:text-[#0b0b0b]">
+            <header id="navbar" class="sticky top-0 z-50 w-full border-b border-[#1a1a1a]/80 bg-[#0b0b0b]/90 backdrop-blur-md">
+                <!-- Barra de Progresso Animada -->
+                <div id="barra-progresso" class="fixed top-0 left-0 right-0 h-[3px] bg-[#00ff66] origin-left z-[999] text-glow-green" style="transform: scaleX(0);"></div>
+                
+                <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+                    <a href="#" class="flex items-center gap-2 font-display text-xl font-bold tracking-wider text-white">
+                        <span class="flex items-center justify-center rounded-lg bg-[#0d3b2a] p-1.5 border border-[#00ff66]/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up h-5 w-5 text-[#00ff66]" aria-hidden="true"><path d="M16 7h6v6"></path><path d="m22 7-8.5 8.5-5-5L2 17"></path></svg>
+                        </span>MÉTODO <span class="text-[#00ff66] text-glow-green">BPO</span>
+                    </a>
+                    <div class="flex items-center gap-4 sm:gap-6">
+                        <!-- Card Pessoas Lendo com CSS Forçado -->
+                        <div class="flex items-center gap-2 rounded-full px-3 py-1 text-xs text-gray-300" style="background-color: #1a1a1a; border: 1px solid #2a2a2a;">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ff66] opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-[#00ff66]"></span>
+                            </span>
+                            <span class="font-mono text-gray-400 font-medium">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users inline h-3.5 w-3.5 mr-1 text-[#00ff66] -mt-0.5" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle></svg>
+                                <span id="contador-pessoas" class="text-white font-bold">155</span> pessoas lendo agora
+                            </span>
+                        </div>
+                        <a href="#pricing" class="hidden sm:inline-flex items-center justify-center rounded-full bg-[#00ff66] px-4 py-1.5 text-xs font-bold tracking-wide text-[#0b0b0b] transition-all hover:bg-white hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(0,255,102,0.3)]">INSCREVA-SE</a>
+                    </div>
+                </div>
+            </header>
+
+            <main>
+                <section id="hero" class="relative overflow-hidden bg-[#0b0b0b] pt-16 pb-24 lg:pt-24 lg:pb-32">
+                    <div class="absolute top-1/4 left-1/2 -z-10 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00ff66]/10 blur-[120px]"></div>
+                    <div class="absolute top-1/2 right-10 -z-10 h-[400px] w-[400px] rounded-full bg-[#ff3b30]/5 blur-[150px]"></div>
+                    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div class="grid items-center gap-12 grid-cols-1">
+                            <div class="flex flex-col items-center text-center w-full max-w-4xl mx-auto">
+                                <!-- Card Método Intensivo com CSS Forçado -->
+                                <div class="mb-6 inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold tracking-wider text-[#00ff66]" style="background-color: rgba(13, 59, 42, 0.6); border: 1px solid rgba(0, 255, 102, 0.3);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flame h-4 w-4 fill-current animate-bounce" aria-hidden="true"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path></svg>
+                                    <span id="d-hero-badge">MÉTODO INTENSIVO • VAGAS LIMITADAS</span>
+                                </div>
+                                
+                                <!-- Texto 7 DIAS com CSS Forçado -->
+                                <h1 class="font-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl uppercase leading-tight"><span id="d-hero-titulo-pre">APRENDA A OPERAR EM</span> <span id="d-hero-titulo-destaque" class="bg-gradient-to-r from-[#00ff66] via-emerald-400 to-[#00ff66] bg-clip-text text-transparent text-glow-green" style="background-image: linear-gradient(to right, #00ff66, #34d399, #00ff66); -webkit-background-clip: text; color: transparent;">7 DIAS</span></h1>
+                                
+                                <p id="d-hero-subtitulo" class="mt-4 font-display text-lg font-semibold text-gray-300 sm:text-xl md:text-2xl">Mesmo que você esteja começando do zero absoluto.</p>
+                                <p id="d-hero-descricao" class="mt-4 max-w-xl text-base leading-relaxed text-gray-400 sm:text-lg">Aprenda um método simples, direto e prático para dar seus primeiros passos nas operações de trade sem perder tempo com teorias desnecessárias e complicadas, agora com suporte individual no WhatsApp e mentoria por videoconferência direta com o professor!</p>
+                                <div class="mt-10 grid grid-cols-2 gap-4 border-t border-[#1a1a1a] pt-8 w-full sm:max-w-md mx-auto text-left">
+                                    <div class="flex items-center gap-2.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check h-5 w-5 flex-shrink-0 text-[#00ff66]" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span id="d-hero-selo-0" class="text-sm font-medium text-gray-300">✔ Método Intensivo</span></div>
+                                    <div class="flex items-center gap-2.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check h-5 w-5 flex-shrink-0 text-[#00ff66]" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span id="d-hero-selo-1" class="text-sm font-medium text-gray-300">✔ Acesso Imediato</span></div>
+                                    <div class="flex items-center gap-2.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check h-5 w-5 flex-shrink-0 text-[#00ff66]" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span id="d-hero-selo-2" class="text-sm font-medium text-gray-300">✔ Para Iniciantes</span></div>
+                                    <div class="flex items-center gap-2.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check h-5 w-5 flex-shrink-0 text-[#00ff66]" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span id="d-hero-selo-3" class="text-sm font-medium text-gray-300">✔ Suporte no WhatsApp</span></div>
+                                </div>
+                            </div>
+                            <div class="w-full max-w-5xl mx-auto mt-8 flex flex-col items-center gap-6">
+                                <div class="relative w-full aspect-video rounded-2xl border border-neutral-800 bg-[#050505] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] flex items-center justify-center">
+                                    <div class="w-full h-full relative flex items-center justify-center bg-black">
+                                        <div class="w-full h-full relative cursor-pointer group flex items-center justify-center overflow-hidden">
+                                            <img alt="Capa do Vídeo" class="absolute inset-0 w-full h-full object-cover filter contrast-[1.05] brightness-[0.55] group-hover:scale-105 transition-all duration-700" referrerpolicy="no-referrer" src="hero_bpo.jpg">
+                                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20"></div>
+                                            <div class="relative z-10 flex flex-col items-center gap-4">
+                                                <div class="h-20 w-20 bg-[#00ff66] text-black rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(0,255,102,0.5)] border border-[#00ff66]/30 relative" tabindex="0">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play h-9 w-9 fill-current ml-1" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path></svg>
+                                                    <span class="absolute -inset-2 rounded-full border border-[#00ff66]/30 animate-ping-slow pointer-events-none"></span>
+                                                </div>
+                                                <span class="px-5 py-2 bg-black/85 backdrop-blur-md rounded-full border border-neutral-800 text-[10px] font-black tracking-widest text-white uppercase shadow-2xl">ASSISTIR APRESENTAÇÃO ⚡</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex w-full flex-col max-w-md mx-auto mt-4">
+                                    <a href="#pricing" class="group relative flex w-full items-center justify-center gap-3 rounded-xl bg-[#00ff66] px-8 py-4 text-base font-extrabold tracking-wider text-[#0b0b0b] transition-all duration-300 hover:bg-white hover:scale-[1.03] active:scale-[0.98] shadow-[0_0_35px_rgba(0,255,102,0.4)] text-center"><span id="d-hero-cta">QUERO COMEÇAR AGORA</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-right h-5 w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" aria-hidden="true"><path d="M7 7h10v10"></path><path d="M7 17 17 7"></path></svg></a>
+                                    <span class="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-gray-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check h-4 w-4 text-[#00ff66]" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>Inscrição 100% segura • Satisfação garantida</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="stats" class="border-y border-[#1a1a1a] bg-[#121212]/50 py-8 relative overflow-hidden">
+                    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div class="grid grid-cols-2 gap-y-6 gap-x-4 md:grid-cols-4 md:gap-8 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="flex items-center gap-1.5 text-[#00ff66] text-glow-green mb-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap h-5 w-5" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"></path><path d="M22 10v6"></path><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"></path></svg><span id="d-stat-valor-0" class="font-mono text-xl font-bold sm:text-2xl">4.892+</span></div>
+                                <span id="d-stat-label-0" class="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Alunos Formados</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="flex items-center gap-1.5 text-[#00ff66] text-glow-green mb-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star h-5 w-5 fill-current" aria-hidden="true"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path></svg><span id="d-stat-valor-1" class="font-mono text-xl font-bold sm:text-2xl">4.9/5</span></div>
+                                <span id="d-stat-label-1" class="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Avaliação Média</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="flex items-center gap-1.5 text-[#00ff66] text-glow-green mb-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-thumbs-up h-4.5 w-4.5" aria-hidden="true"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path></svg><span id="d-stat-valor-2" class="font-mono text-xl font-bold sm:text-2xl">98,4%</span></div>
+                                <span id="d-stat-label-2" class="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Índice de Satisfação</span>
+                            </div>
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="flex items-center gap-1.5 text-[#00ff66] text-glow-green mb-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check h-5 w-5" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg><span id="d-stat-valor-3" class="font-mono text-xl font-bold sm:text-2xl">7 Dias</span></div>
+                                <span id="d-stat-label-3" class="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Garantia Incondicional</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="benefits" class="relative bg-[#111111]/40 py-20 border-y border-[#1a1a1a]">
+                    <div class="absolute top-1/2 left-10 -z-10 h-[300px] w-[300px] rounded-full bg-[#00ff66]/5 blur-[100px]"></div>
+                    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div class="text-center max-w-3xl mx-auto">
+                            <span id="d-benefits-tag" class="text-xs font-bold uppercase tracking-widest text-[#00ff66] text-glow-green">Grade de Aprendizado</span>
+                            <h2 id="d-benefits-titulo" class="mt-3 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl md:text-5xl">O QUE VOCÊ VAI APRENDER</h2>
+                            <p id="d-benefits-descricao" class="mt-4 text-base text-gray-400">Uma trilha lógica de estudos estruturada em módulos curtos e diretos para transformar você em um operador consciente, com o passo a passo completo.</p>
+                        </div>
+                        <div id="d-benefits-cards" class="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                            <div class="group relative rounded-xl border border-[#222] bg-[#161616]/80 p-6 transition-all duration-300 hover:border-[#00ff66]/30 hover:shadow-[0_0_20px_rgba(0,255,102,0.1)] overflow-hidden">
+                                <div class="absolute -right-12 -top-12 -z-10 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl transition-all duration-300 group-hover:scale-150 group-hover:bg-[#00ff66]/20"></div>
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] transition-colors duration-300 group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:border-transparent"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open h-6 w-6" aria-hidden="true"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">Introdução ao Mercado</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Entenda os fundamentos do trade e como dar seus primeiros passos.</p>
+                                <div class="absolute bottom-0 left-0 h-[2px] w-0 bg-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#222] bg-[#161616]/80 p-6 transition-all duration-300 hover:border-[#00ff66]/30 hover:shadow-[0_0_20px_rgba(0,255,102,0.1)] overflow-hidden">
+                                <div class="absolute -right-12 -top-12 -z-10 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl transition-all duration-300 group-hover:scale-150 group-hover:bg-[#00ff66]/20"></div>
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] transition-colors duration-300 group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:border-transparent"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-line h-6 w-6" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">Leitura de Gráfico</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Aprenda a analisar velas (candlesticks), suportes, resistências e as tendências de preços com clareza visual e sem complicação.</p>
+                                <div class="absolute bottom-0 left-0 h-[2px] w-0 bg-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#222] bg-[#161616]/80 p-6 transition-all duration-300 hover:border-[#00ff66]/30 hover:shadow-[0_0_20px_rgba(0,255,102,0.1)] overflow-hidden">
+                                <div class="absolute -right-12 -top-12 -z-10 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl transition-all duration-300 group-hover:scale-150 group-hover:bg-[#00ff66]/20"></div>
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] transition-colors duration-300 group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:border-transparent"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap h-6 w-6" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">Setup para Iniciantes</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Domine a estratégia matemática exata do Método BPO, projetada para quem tem pouco tempo e precisa de precisão nas entradas.</p>
+                                <div class="absolute bottom-0 left-0 h-[2px] w-0 bg-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#222] bg-[#161616]/80 p-6 transition-all duration-300 hover:border-[#00ff66]/30 hover:shadow-[0_0_20px_rgba(0,255,102,0.1)] overflow-hidden">
+                                <div class="absolute -right-12 -top-12 -z-10 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl transition-all duration-300 group-hover:scale-150 group-hover:bg-[#00ff66]/20"></div>
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] transition-colors duration-300 group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:border-transparent"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-alert h-6 w-6" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">Gestão de Risco</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">O pilar mais importante. Aprenda a calcular o tamanho dos seus lotes e como proteger seu capital para nunca expor sua banca.</p>
+                                <div class="absolute bottom-0 left-0 h-[2px] w-0 bg-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#222] bg-[#161616]/80 p-6 transition-all duration-300 hover:border-[#00ff66]/30 hover:shadow-[0_0_20px_rgba(0,255,102,0.1)] overflow-hidden">
+                                <div class="absolute -right-12 -top-12 -z-10 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl transition-all duration-300 group-hover:scale-150 group-hover:bg-[#00ff66]/20"></div>
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] transition-colors duration-300 group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:border-transparent"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brain h-6 w-6" aria-hidden="true"><path d="M12 18V5"></path><path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"></path><path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"></path><path d="M17.997 5.125a4 4 0 0 1 2.526 5.77"></path><path d="M18 18a4 4 0 0 0 2-7.464"></path><path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"></path><path d="M6 18a4 4 0 0 1-2-7.464"></path><path d="M6.003 5.125a4 4 0 0 0-2.526 5.77"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">Controle Emocional</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Desenvolva a psicologia operacional dos traders de sucesso para evitar decisões precipitadas, ansiedade ou ganância.</p>
+                                <div class="absolute bottom-0 left-0 h-[2px] w-0 bg-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#222] bg-[#161616]/80 p-6 transition-all duration-300 hover:border-[#00ff66]/30 hover:shadow-[0_0_20px_rgba(0,255,102,0.1)] overflow-hidden">
+                                <div class="absolute -right-12 -top-12 -z-10 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl transition-all duration-300 group-hover:scale-150 group-hover:bg-[#00ff66]/20"></div>
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] transition-colors duration-300 group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:border-transparent"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mouse-pointer-click h-6 w-6" aria-hidden="true"><path d="M14 4.1 12 6"></path><path d="m5.1 8-2.9-.8"></path><path d="m6 12-1.9 2"></path><path d="M7.2 2.2 8 5.1"></path><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">Execução de Operações</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">O passo a passo do clique a clique. Como abrir ordens de compra e venda, posicionar Stop Loss e definir metas de ganho.</p>
+                                <div class="absolute bottom-0 left-0 h-[2px] w-0 bg-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#222] bg-[#161616]/80 p-6 transition-all duration-300 hover:border-[#00ff66]/30 hover:shadow-[0_0_20px_rgba(0,255,102,0.1)] overflow-hidden">
+                                <div class="absolute -right-12 -top-12 -z-10 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl transition-all duration-300 group-hover:scale-150 group-hover:bg-[#00ff66]/20"></div>
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] transition-colors duration-300 group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:border-transparent"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target h-6 w-6" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">Disciplina de Trader</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Como criar uma rotina focada, registrar seu diário de operações e mensurar sua evolução dia após dia nas suas operações.</p>
+                                <div class="absolute bottom-0 left-0 h-[2px] w-0 bg-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#222] bg-[#161616]/80 p-6 transition-all duration-300 hover:border-[#00ff66]/30 hover:shadow-[0_0_20px_rgba(0,255,102,0.1)] overflow-hidden">
+                                <div class="absolute -right-12 -top-12 -z-10 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl transition-all duration-300 group-hover:scale-150 group-hover:bg-[#00ff66]/20"></div>
+                                <div class="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] transition-colors duration-300 group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:border-transparent"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy h-6 w-6" aria-hidden="true"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"></path><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"></path><path d="M18 9h1.5a1 1 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path><path d="M6 9H4.5a1 1 0 0 1 0-5H6"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">Primeiros Resultados</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Saia do simulador para o mercado real com segurança, aplicando o checklist operacional do BPO para os seus primeiros trades.</p>
+                                <div class="absolute bottom-0 left-0 h-[2px] w-0 bg-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                        </div>
+                        <div class="mt-12 relative rounded-2xl border-2 border-[#00ff66]/40 bg-[#0d3b2a]/20 p-6 md:p-8 shadow-[0_0_30px_rgba(0,255,102,0.15)] overflow-hidden">
+                            <div class="absolute right-0 top-0 -z-10 h-40 w-40 bg-[#00ff66]/10 rounded-full blur-2xl pointer-events-none"></div>
+                            <div class="absolute left-0 bottom-0 -z-10 h-32 w-32 bg-[#25d366]/5 rounded-full blur-xl pointer-events-none"></div>
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                                <div class="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
+                                    <div class="flex -space-x-3">
+                                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#25d366] text-[#0b0b0b] shadow-[0_0_20px_rgba(37,211,102,0.3)] border-2 border-[#0b0b0b]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle h-7 w-7 fill-current" aria-hidden="true"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path></svg></div>
+                                        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00ff66] text-[#0b0b0b] shadow-[0_0_20px_rgba(0,255,102,0.3)] border-2 border-[#0b0b0b]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-video h-7 w-7" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path><rect x="2" y="6" width="14" height="12" rx="2"></rect></svg></div>
+                                    </div>
+                                    <div>
+                                        <div class="inline-flex items-center gap-1.5 rounded-full bg-[#00ff66]/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-[#00ff66] border border-[#00ff66]/20"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles h-3 w-3 animate-pulse" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle></svg>Destaque VIP do Método BPO</div>
+                                        <h3 class="mt-3 font-display text-2xl font-black text-white tracking-tight leading-tight">Suporte Direto com o Professor &amp; Mentoria por Videoconferência</h3>
+                                        <p class="mt-2 text-sm text-gray-300 max-w-3xl leading-relaxed">Você não estará sozinho! Além das aulas gravadas do treinamento, você terá acesso a um canal direto de <span class="text-[#25d366] font-bold">WhatsApp individual diretamente com o professor</span> para tirar dúvidas de mercado e participar de <span class="text-[#00ff66] font-bold">mentorias ao vivo por videoconferência</span> para acelerar seu aprendizado e analisar o mercado juntos!</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2.5 min-w-[200px] justify-center">
+                                    <div class="flex items-center gap-2 text-xs font-bold text-gray-400"><span class="h-2 w-2 rounded-full bg-[#25d366] animate-ping"></span><span>Vagas de Suporte Ativas</span></div>
+                                    <a href="#pricing" class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#00ff66] px-5 py-3 text-sm font-black uppercase tracking-wider text-[#0b0b0b] hover:bg-[#20ba5a] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(0,255,102,0.3)] hover:shadow-[0_0_25px_rgba(0,255,102,0.5)]">Garantir Minha Vaga</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="who-is-it-for" class="relative py-20 bg-[#0b0b0b] overflow-hidden">
+                    <div class="absolute right-10 top-1/4 -z-10 h-[300px] w-[300px] rounded-full bg-[#00ff66]/5 blur-[120px]"></div>
+                    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div class="grid gap-12 lg:grid-cols-12 lg:items-center">
+                            <div class="lg:col-span-5">
+                                <div class="rounded-2xl border border-[#1a1a1a] bg-[#121212]/95 p-6 border-l-4 border-l-[#00ff66]">
+                                    <span class="text-[10px] font-bold uppercase tracking-widest text-[#00ff66] font-mono">Por que criamos o BPO</span>
+                                    <h3 class="mt-1 font-display text-xl font-bold text-white">O fim da teoria enrolada</h3>
+                                    <div class="mt-6 rounded-lg bg-[#0b0b0b] p-4 border border-[#222]">
+                                        <div class="flex items-center gap-2 text-xs font-bold text-[#ff3b30]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-question-mark h-4 w-4" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>MERCADO TRADICIONAL</div>
+                                        <p class="mt-1.5 text-xs text-gray-400">Cursos de 40 horas repletos de termos teóricos complexos, fórmulas de cálculo manuais e conceitos acadêmicos que só servem para confundir e fazer você perder dinheiro.</p>
+                                    </div>
+                                    <div class="mt-4 rounded-lg bg-[#0d3b2a]/30 p-4 border border-[#00ff66]/20">
+                                        <div class="flex items-center gap-2 text-xs font-bold text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up h-4 w-4" aria-hidden="true"><path d="M16 7h6v6"></path><path d="m22 7-8.5 8.5-5-5L2 17"></path></svg>O MÉTODO BPO</div>
+                                        <p class="mt-1.5 text-xs text-[#bbf7d0]">Foco 100% focado no que você realmente precisa ver e clicar. Regras claras de entrada e saída com gestão matemática simples, pronto para ser aplicado na tela em até 7 dias.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-7">
+                                <span id="d-perfil-tag" class="text-xs font-bold uppercase tracking-widest text-[#00ff66] text-glow-green">Perfil do Aluno Ideal</span>
+                                <h2 id="d-perfil-titulo" class="mt-3 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">ESSE CURSO É PARA VOCÊ QUE:</h2>
+                                <p id="d-perfil-descricao" class="mt-4 text-base text-gray-400">Se você se identifica com uma ou mais das situações abaixo, o Método BPO foi feito sob medida para acelerar o seu aprendizado de forma organizada.</p>
+                                <div id="d-perfil-itens" class="mt-10 grid gap-4 sm:grid-cols-2">
+                                    <div class="flex items-start gap-3 rounded-lg border border-[#1a1a1a] bg-[#141414]/50 p-4 hover:border-[#00ff66]/20 transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check mt-0.5 h-5 w-5 flex-shrink-0 text-[#00ff66] text-glow-green" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm font-medium text-gray-300 leading-snug">Nunca operou antes</span></div>
+                                    <div class="flex items-start gap-3 rounded-lg border border-[#1a1a1a] bg-[#141414]/50 p-4 hover:border-[#00ff66]/20 transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check mt-0.5 h-5 w-5 flex-shrink-0 text-[#00ff66] text-glow-green" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm font-medium text-gray-300 leading-snug">Já tentou aprender sozinho e se frustrou</span></div>
+                                    <div class="flex items-start gap-3 rounded-lg border border-[#1a1a1a] bg-[#141414]/50 p-4 hover:border-[#00ff66]/20 transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check mt-0.5 h-5 w-5 flex-shrink-0 text-[#00ff66] text-glow-green" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm font-medium text-gray-300 leading-snug">Está cansado de conteúdos confusos e teóricos</span></div>
+                                    <div class="flex items-start gap-3 rounded-lg border border-[#1a1a1a] bg-[#141414]/50 p-4 hover:border-[#00ff66]/20 transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check mt-0.5 h-5 w-5 flex-shrink-0 text-[#00ff66] text-glow-green" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm font-medium text-gray-300 leading-snug">Quer um método objetivo e direto ao ponto</span></div>
+                                    <div class="flex items-start gap-3 rounded-lg border border-[#1a1a1a] bg-[#141414]/50 p-4 hover:border-[#00ff66]/20 transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check mt-0.5 h-5 w-5 flex-shrink-0 text-[#00ff66] text-glow-green" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm font-medium text-gray-300 leading-snug">Tem pouco tempo disponível por dia</span></div>
+                                    <div class="flex items-start gap-3 rounded-lg border border-[#1a1a1a] bg-[#141414]/50 p-4 hover:border-[#00ff66]/20 transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check mt-0.5 h-5 w-5 flex-shrink-0 text-[#00ff66] text-glow-green" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span class="text-sm font-medium text-gray-300 leading-snug">Deseja aprender de forma prática e aplicada</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="content" class="relative bg-[#111] py-20 border-y border-[#1a1a1a]">
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 h-[400px] w-[400px] rounded-full bg-[#00ff66]/5 blur-[150px]"></div>
+                    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div class="text-center max-w-3xl mx-auto">
+                            <span id="d-incluso-tag" class="text-xs font-bold uppercase tracking-widest text-[#00ff66] text-glow-green">Acesso Completo</span>
+                            <h2 id="d-incluso-titulo" class="mt-3 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">O QUE ESTÁ INCLUSO NO TREINAMENTO</h2>
+                            <p id="d-incluso-descricao" class="mt-4 text-base text-gray-400">Você receberá um pacote completo com absolutamente tudo o que precisa para aprender, treinar e colher os primeiros resultados sem precisar adquirir ferramentas complementares.</p>
+                        </div>
+                        <div id="d-incluso-itens" class="mt-14 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">100% em Vídeo Aulas</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Linguagem Simples e Objetiva</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Método Super Intensivo</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Conteúdo Selecionado</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Estratégia para Iniciantes</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Passo a Passo Estruturado</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Gestão de Risco e Disciplina</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#00ff66]/40 bg-[#0d3b2a]/40 shadow-[0_0_20px_rgba(0,255,102,0.15)]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66] bg-[#00ff66] text-[#0b0b0b]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-[#00ff66] text-glow-green">Do Zero ao Primeiro Trade</span><span class="absolute right-3 top-3 rounded bg-[#00ff66]/10 px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-[#00ff66] uppercase border border-[#00ff66]/20">Destaque</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#00ff66]/40 bg-[#0d3b2a]/40 shadow-[0_0_20px_rgba(0,255,102,0.15)]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66] bg-[#00ff66] text-[#0b0b0b]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-[#00ff66] text-glow-green">Suporte VIP Individual no WhatsApp para Alunos</span><span class="absolute right-3 top-3 rounded bg-[#00ff66]/10 px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-[#00ff66] uppercase border border-[#00ff66]/20">Destaque</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Acesso Imediato</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Aprenda no Seu Ritmo</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Sem Enrolação</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Tempo de Tela Orientado</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-gray-200">Ideal Para Quem Tem Pouco Tempo</span></div>
+                            <div class="group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 border-[#00ff66]/40 bg-[#0d3b2a]/40 shadow-[0_0_20px_rgba(0,255,102,0.15)]"><div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 border-[#00ff66] bg-[#00ff66] text-[#0b0b0b]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3.5 w-3.5 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div><span class="text-sm font-semibold tracking-tight text-[#00ff66] text-glow-green">Aprenda a Operar em 7 Dias ou Menos*</span><span class="absolute right-3 top-3 rounded bg-[#00ff66]/10 px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-[#00ff66] uppercase border border-[#00ff66]/20">Destaque</span></div>
+                        </div>
+                        <div class="mt-10 flex items-center justify-center gap-2 text-center text-xs text-gray-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check h-4 w-4 text-[#00ff66]" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg><span>*O prazo de 7 dias depende da dedicação, tempo de tela e cumprimento integral de cada módulo sugerido.</span></div>
+                    </div>
+                </section>
+
+                <section id="testimonials" class="relative py-20 bg-[#0b0b0b] overflow-hidden">
+                    <div class="absolute right-1/4 top-1/2 -translate-y-1/2 -z-10 h-[400px] w-[400px] rounded-full bg-[#00ff66]/5 blur-[120px]"></div>
+                    <div class="absolute left-1/4 top-1/3 -z-10 h-[300px] w-[300px] rounded-full bg-emerald-500/5 blur-[100px]"></div>
+                    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                        <div class="text-center max-w-2xl mx-auto">
+                            <span id="d-testimonials-tag" class="text-xs font-bold uppercase tracking-widest text-[#00ff66] text-glow-green">Resultados Reais</span>
+                            <h2 id="d-testimonials-titulo" class="mt-3 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">QUEM JÁ ALCANÇOU DIZ TUDO</h2>
+                            <p id="d-testimonials-descricao" class="mt-4 text-base text-gray-400">Confira os feedbacks reais enviados espontaneamente por nossos alunos no WhatsApp oficial de suporte do Método BPO.</p>
+                        </div>
+                        <div class="mt-14 relative px-4 md:px-12">
+                            <div class="mx-auto max-w-xl rounded-2xl overflow-hidden border border-[#222] bg-[#ece5dd] shadow-2xl relative">
+                                <div class="absolute inset-0 opacity-[0.06] pointer-events-none" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23000000' fill-opacity='0.4'%3E%3Cpath d='M50 50c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10s-10-4.477-10-10 4.477-10 10-10zM10 10c0-5.523 4.477-10 10-10s10 4.477 10 10-4.477 10-10 10c0 5.523-4.477 10-10 10S0 25.523 0 20s4.477-10 10-10zm10 8c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm40 40c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z'/%3E%3C/g%3E%3C/svg%3E&quot;);"></div>
+                                <div class="bg-[#075e54] px-4 py-3 flex items-center justify-between text-white relative z-10">
+                                    <div class="flex items-center gap-3">
+                                        <div id="testimonial-avatar" class="h-10 w-10 rounded-full bg-emerald-700 border border-[#128c7e] flex items-center justify-center font-display font-bold text-sm text-emerald-100 shadow-sm">RM</div>
+                                        <div>
+                                            <h4 id="testimonial-name" class="font-sans text-sm font-bold tracking-wide leading-tight">Renata Machado</h4>
+                                            <span class="text-[10px] text-emerald-200 font-medium flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-[#00ff66] animate-pulse"></span>online</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4 text-emerald-100/90"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-video h-4.5 w-4.5 cursor-pointer hover:text-white" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path><rect x="2" y="6" width="14" height="12" rx="2"></rect></svg><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone h-4 w-4 cursor-pointer hover:text-white" aria-hidden="true"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis-vertical h-4.5 w-4.5 cursor-pointer hover:text-white" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></div>
+                                </div>
+                                <div id="testimonial-scroll" class="fx-chat-scroll p-4 flex flex-col gap-3 h-[300px] sm:h-[340px] relative z-10 overflow-y-auto overflow-x-hidden">
+                                    <div id="testimonial-body" class="flex flex-col gap-3.5 w-full">
+                                        <div class="mx-auto my-1.5 rounded bg-white/75 border border-black/5 px-2.5 py-0.5 text-[9px] font-bold text-gray-500 uppercase tracking-wider shadow-sm font-mono">Hoje</div>
+                                        <div class="flex w-full justify-start">
+                                            <div class="relative max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed shadow-[0_1px_1px_rgba(0,0,0,0.15)] bg-white text-[#262626] rounded-tl-none border-l-4 border-l-[#128c7e]">
+                                                <p class="font-sans leading-relaxed text-[11.5px] sm:text-xs">Minha experiência está sendo ótima, tem me auxiliado bastante no dia a dia com o treinamento que adquiri. Nós que somos dessa área todos os dias aparecem novidades eles são bem atualizados e com a comunicação assertiva e clara para retirada de dúvidas.</p>
+                                                <div class="mt-1 flex items-center justify-end gap-1 text-[9px] text-gray-400 font-mono select-none"><span>10:00</span></div>
+                                            </div>
+                                        </div>
+                                        <div class="flex w-full justify-end">
+                                            <div class="relative max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed shadow-[0_1px_1px_rgba(0,0,0,0.15)] bg-[#d9fdd3] text-[#262626] rounded-tr-none border-r-4 border-r-emerald-500">
+                                                <p class="font-sans leading-relaxed text-[11.5px] sm:text-xs">Top, que obrigado pelo feedback.</p>
+                                                <div class="mt-1 flex items-center justify-end gap-1 text-[9px] text-gray-400 font-mono select-none"><span>10:02</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-check h-3.5 w-3.5 text-blue-500 stroke-[2.5]" aria-hidden="true"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-[#f0f0f0] p-2 border-t border-black/5 flex items-center justify-between text-gray-400 relative z-10">
+                                    <div class="flex items-center gap-3 bg-white rounded-full px-3 py-1.5 flex-1 shadow-sm mr-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square h-4 w-4 text-gray-400" aria-hidden="true"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"></path></svg><span class="text-[11px] text-gray-400 font-sans">Mensagem de apoio do aluno...</span></div>
+                                    <div class="h-8 w-8 rounded-full bg-[#00a884] flex items-center justify-center text-white cursor-pointer hover:scale-105 transition-transform"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-4 w-4 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div>
+                                </div>
+                            </div>
+                            <button id="testimonial-prev" class="absolute left-0 top-1/2 -translate-y-1/2 rounded-full border border-[#222] bg-[#141414]/90 p-2 text-gray-400 transition-colors hover:text-[#00ff66] hover:border-[#00ff66]/30 shadow-lg z-20"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left h-5 w-5" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button>
+                            <button id="testimonial-next" class="absolute right-0 top-1/2 -translate-y-1/2 rounded-full border border-[#222] bg-[#141414]/90 p-2 text-gray-400 transition-colors hover:text-[#00ff66] hover:border-[#00ff66]/30 shadow-lg z-20"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right h-5 w-5" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+                        </div>
+                        <div id="testimonial-dots" class="mt-8 flex justify-center gap-2">
+                            <button class="testimonial-dot h-2 rounded-full transition-all duration-300 w-2 bg-[#2a2a2a] hover:bg-gray-600" data-index="0"></button>
+                            <button class="testimonial-dot h-2 rounded-full transition-all duration-300 w-2 bg-[#2a2a2a] hover:bg-gray-600" data-index="1"></button>
+                            <button class="testimonial-dot h-2 rounded-full transition-all duration-300 w-6 bg-[#00ff66] text-glow-green" data-index="2"></button>
+                            <button class="testimonial-dot h-2 rounded-full transition-all duration-300 w-2 bg-[#2a2a2a] hover:bg-gray-600" data-index="3"></button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="differentials" class="relative py-20 bg-[#111111]/40 border-y border-[#1a1a1a]">
+                    <div class="absolute left-1/3 top-1/2 -translate-y-1/2 -z-10 h-[300px] w-[300px] rounded-full bg-[#00ff66]/5 blur-[120px]"></div>
+                    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div class="text-center max-w-2xl mx-auto">
+                            <span id="d-differentials-tag" class="text-xs font-bold uppercase tracking-widest text-[#00ff66] text-glow-green">Nossos Diferenciais</span>
+                            <h2 id="d-differentials-titulo" class="mt-3 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">POR QUE ESCOLHER O BPO</h2>
+                            <p id="d-differentials-descricao" class="mt-4 text-base text-gray-400">Nossa metodologia foi desenhada para superar as barreiras clássicas que fazem 90% dos traders iniciantes desistirem nas primeiras semanas.</p>
+                        </div>
+                        <div id="d-differentials-cards" class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            <div class="group relative rounded-xl border border-[#1e1e1e] bg-[#161616]/85 p-6 hover:border-[#00ff66]/30 transition-all duration-300 overflow-hidden">
+                                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:scale-105 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rocket h-5 w-5 fill-current" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold tracking-tight text-white group-hover:text-[#00ff66] transition-colors">Método direto ao ponto</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Sem enrolação teórica desnecessária. Vamos direto às técnicas operacionais.</p>
+                                <div class="absolute right-0 top-0 h-0.5 w-0 bg-gradient-to-r from-emerald-500 to-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#1e1e1e] bg-[#161616]/85 p-6 hover:border-[#00ff66]/30 transition-all duration-300 overflow-hidden">
+                                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:scale-105 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rocket h-5 w-5 fill-current" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold tracking-tight text-white group-hover:text-[#00ff66] transition-colors">Foco em iniciantes</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Criado para quem está começando do zero absoluto e nunca abriu um gráfico.</p>
+                                <div class="absolute right-0 top-0 h-0.5 w-0 bg-gradient-to-r from-emerald-500 to-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#1e1e1e] bg-[#161616]/85 p-6 hover:border-[#00ff66]/30 transition-all duration-300 overflow-hidden">
+                                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:scale-105 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rocket h-5 w-5 fill-current" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold tracking-tight text-white group-hover:text-[#00ff66] transition-colors">Acesso imediato</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Compre agora e comece a estudar em menos de 2 minutos por e-mail.</p>
+                                <div class="absolute right-0 top-0 h-0.5 w-0 bg-gradient-to-r from-emerald-500 to-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#1e1e1e] bg-[#161616]/85 p-6 hover:border-[#00ff66]/30 transition-all duration-300 overflow-hidden">
+                                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:scale-105 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rocket h-5 w-5 fill-current" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold tracking-tight text-white group-hover:text-[#00ff66] transition-colors">Gestão de risco</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Aprenda as regras fundamentais de sobrevivência para proteger seu patrimônio.</p>
+                                <div class="absolute right-0 top-0 h-0.5 w-0 bg-gradient-to-r from-emerald-500 to-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#1e1e1e] bg-[#161616]/85 p-6 hover:border-[#00ff66]/30 transition-all duration-300 overflow-hidden">
+                                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:scale-105 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rocket h-5 w-5 fill-current" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold tracking-tight text-white group-hover:text-[#00ff66] transition-colors">Linguagem simples</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Sem jargões técnicos incompreensíveis. Explicações transparentes e didáticas.</p>
+                                <div class="absolute right-0 top-0 h-0.5 w-0 bg-gradient-to-r from-emerald-500 to-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                            <div class="group relative rounded-xl border border-[#1e1e1e] bg-[#161616]/85 p-6 hover:border-[#00ff66]/30 transition-all duration-300 overflow-hidden">
+                                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:scale-105 transition-all duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rocket h-5 w-5 fill-current" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg></div>
+                                <h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">Resultado mais rápido</h3>
+                                <p class="mt-2.5 text-sm leading-relaxed text-gray-400">Estruturado para você aprender e fazer seus primeiros simulados em 7 dias.</p>
+                                <div class="absolute right-0 top-0 h-0.5 w-0 bg-gradient-to-r from-emerald-500 to-[#00ff66] transition-all duration-300 group-hover:w-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="warranty" class="relative py-20 bg-[#0b0b0b] overflow-hidden">
+                    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 h-[350px] w-[350px] rounded-full bg-[#00ff66]/5 blur-[120px]"></div>
+                    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <div class="relative rounded-3xl border border-[#222] bg-[#121212]/90 p-8 md:p-12 box-glow-green overflow-hidden">
+                            <div class="absolute right-0 top-0 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl"></div>
+                            <div class="grid gap-10 md:grid-cols-12 md:items-center">
+                                <div class="md:col-span-4 flex justify-center">
+                                    <div class="relative flex h-40 w-40 items-center justify-center rounded-full bg-gradient-to-tr from-[#0d3b2a] to-[#121212] border-2 border-[#00ff66] shadow-[0_0_30px_rgba(0,255,102,0.25)]">
+                                        <div class="absolute inset-2 rounded-full border border-dashed border-[#00ff66]/30 animate-[spin_40s_linear_infinite]"></div>
+                                        <div class="absolute inset-0 flex items-center justify-center"><span class="absolute text-[9px] font-bold uppercase tracking-[0.25em] text-[#00ff66] text-glow-green -translate-y-12">Garantia</span><span class="absolute text-[9px] font-bold uppercase tracking-[0.25em] text-gray-500 translate-y-12">Incondicional</span></div>
+                                        <div class="text-center relative z-10 flex flex-col items-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield h-10 w-10 text-[#00ff66] mb-1 drop-shadow-[0_0_10px_rgba(0,255,102,0.5)]" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><span class="font-display text-2xl font-black text-white">7</span><span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Dias</span></div>
+                                    </div>
+                                </div>
+                                <div class="md:col-span-8 flex flex-col text-center md:text-left">
+                                    <span class="inline-flex items-center justify-center md:justify-start gap-1 text-xs font-bold uppercase tracking-widest text-[#00ff66] text-glow-green"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles h-3.5 w-3.5 animate-pulse" aria-hidden="true"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle></svg>Risco Zero Garantido</span>
+                                    <h2 id="d-warranty-titulo" class="mt-3 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">VOCÊ NÃO TEM RISCO</h2>
+                                    <p id="d-warranty-texto" class="mt-4 text-base leading-relaxed text-gray-400">Você terá acesso imediato ao conteúdo e poderá iniciar seus estudos hoje mesmo. Estude as aulas, aplique o método e faça seus primeiros simulados. Se em até <strong>7 dias</strong> você achar que o treinamento não é para você, basta nos enviar um e-mail para receber 100% do seu dinheiro de volta. Sem burocracias, de forma direta e transparente.</p>
+                                    <div class="mt-6 grid gap-3 sm:grid-cols-2 text-left text-sm text-gray-300">
+                                        <div class="flex items-center gap-2"><div class="flex h-5 w-5 items-center justify-center rounded-full bg-[#0d3b2a] text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3 w-3 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div>Reembolso 1-clique</div>
+                                        <div class="flex items-center gap-2"><div class="flex h-5 w-5 items-center justify-center rounded-full bg-[#0d3b2a] text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check h-3 w-3 stroke-[3]" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></div>Acesso liberado na hora</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="pricing" class="relative py-20 bg-[#0b0b0b] overflow-hidden">
+                    <div class="absolute right-1/4 top-1/3 -translate-y-1/2 -z-10 h-[500px] w-[500px] rounded-full bg-[#00ff66]/10 blur-[130px]"></div>
+                    <div class="absolute left-1/4 bottom-10 -z-10 h-[400px] w-[400px] rounded-full bg-[#ff3b30]/5 blur-[120px]"></div>
+                    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                        <div class="text-center max-w-2xl mx-auto">
+                            <span id="d-pricing-tag" class="text-xs font-bold uppercase tracking-widest text-[#00ff66] text-glow-green">Condição Única</span>
+                            <h2 id="d-pricing-titulo" class="mt-3 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Sua Oportunidade de Começar Hoje</h2>
+                            <p id="d-pricing-descricao" class="mt-4 text-base text-gray-400">Acesso imediato e completo a toda a estrutura do Método BPO por um valor absurdamente promocional.</p>
+                        </div>
+                        <div class="mt-14 max-w-lg mx-auto">
+                            <div class="relative rounded-3xl border-2 border-[#00ff66]/40 bg-[#121212]/95 p-8 md:p-10 shadow-[0_0_40px_rgba(0,255,102,0.15)] overflow-hidden">
+                                <div id="d-pricing-desconto" class="absolute -right-12 top-6 rotate-45 bg-gradient-to-r from-emerald-500 to-[#00ff66] px-12 py-1 text-center text-[10px] font-black uppercase tracking-widest text-[#0b0b0b] shadow-sm">70% OFF</div>
+                                <div class="text-center">
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-[#0d3b2a] border border-[#00ff66]/20 px-3.5 py-1 text-xs font-bold text-[#00ff66]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flame h-3.5 w-3.5 animate-pulse" aria-hidden="true"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"></path></svg>OFERTA ESPECIAL</span>
+                                    <p id="d-pricing-de" class="mt-6 text-sm font-semibold text-gray-400 line-through">De R$ 497,00</p>
+                                    <div class="mt-2 flex flex-col items-center">
+                                        <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Por apenas</span>
+                                        <p id="d-pricing-por" class="mt-1 font-display text-5xl font-black text-[#00ff66] text-glow-green sm:text-6xl">R$ 147,00</p>
+                                        <span class="mt-1 text-xs text-gray-400">À vista no PIX, boleto ou cartão</span>
+                                    </div>
+                                    <div class="mt-4 rounded-xl bg-[#0b0b0b] px-4 py-2.5 border border-[#1a1a1a] inline-flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-credit-card h-4 w-4 text-[#00ff66]" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg><span class="text-xs font-semibold text-gray-300">Ou em até <strong id="d-pricing-parcelas" class="text-white">12x de R$ 14,67</strong></span></div>
+                                </div>
+                                <div class="mt-8 border-t border-[#1a1a1a] pt-6 flex flex-col gap-3.5 text-sm text-gray-300">
+                                    <div class="flex items-center gap-2.5"><div class="h-2 w-2 rounded-full bg-[#00ff66] text-glow-green"></div><span>Curso Completo Método BPO</span></div>
+                                    <div class="flex items-center gap-2.5"><div class="h-2 w-2 rounded-full bg-[#00ff66] text-glow-green"></div><span>Vídeos do básico ao primeiro trade</span></div>
+                                    <div class="flex items-center gap-2.5"><div class="h-2 w-2 rounded-full bg-[#00ff66] text-glow-green"></div><span>Gestão de risco matemática inclusa</span></div>
+                                    <div class="flex items-center gap-2.5"><div class="h-2 w-2 rounded-full bg-[#00ff66] text-glow-green"></div><span>Acesso imediato e suporte para dúvidas</span></div>
+                                    <div class="mt-2 flex items-center gap-3.5 rounded-2xl bg-[#25d366]/10 border-2 border-[#25d366]/40 p-4 shadow-[0_0_20px_rgba(37,211,102,0.15)] text-white relative overflow-hidden">
+                                        <div class="absolute right-0 top-0 h-16 w-16 -mr-4 -mt-4 bg-[#25d366]/5 rounded-full blur-lg pointer-events-none"></div>
+                                        <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#25d366] text-[#0b0b0b] shadow-[0_0_15px_rgba(37,211,102,0.4)] animate-pulse"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle h-5.5 w-5.5 fill-current" aria-hidden="true"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path></svg></div>
+                                        <div>
+                                            <span class="block text-[11px] font-black uppercase tracking-wider text-[#25d366] mb-0.5">Super Bônus Exclusivo</span>
+                                            <p class="text-sm font-extrabold text-white leading-snug">Suporte Individual no WhatsApp diretamente com o Professor!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-5 rounded-2xl border border-[#ff3b30]/40 bg-[#2a0f0d]/70 p-4 text-center relative overflow-hidden">
+                                    <div class="absolute inset-0 -z-10 bg-[#ff3b30]/5 blur-xl pointer-events-none"></div>
+                                    <div class="flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#ff3b30]"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-alert h-4 w-4 animate-pulse" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="12"></line><line x1="12" x2="12.01" y1="16" y2="16"></line></svg>Esta oferta expira em breve!</div>
+                                    <div class="mt-2 flex items-center justify-center gap-1.5 font-mono font-black text-white">
+                                        <span class="flex items-baseline gap-0.5"><span id="cd-min" class="text-3xl sm:text-4xl text-glow-green text-[#00ff66]">15</span><span class="text-sm sm:text-base text-gray-400">m</span></span>
+                                        <span class="text-2xl sm:text-3xl text-gray-600 -mt-1">:</span>
+                                        <span class="flex items-baseline gap-0.5"><span id="cd-sec" class="text-3xl sm:text-4xl text-glow-green text-[#00ff66]">00</span><span class="text-sm sm:text-base text-gray-400">s</span></span>
+                                    </div>
+                                </div>
+                                <div class="mt-6">
+                                    <a id="d-pricing-link" href="https://pay.hotmart.com/W106188599O" target="_blank" rel="noopener noreferrer" class="group relative flex w-full items-center justify-center gap-2 sm:gap-3.5 rounded-2xl bg-[#00ff66] px-3 sm:px-0 py-4 sm:py-5 text-[11px] sm:text-base leading-snug text-center font-black tracking-normal sm:tracking-widest text-[#0b0b0b] transition-all duration-300 hover:bg-white hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_30px_rgba(0,255,102,0.35)]"><span id="d-pricing-botao-texto">QUERO INSCREVER-ME PELA HOTMART</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-right h-4 w-4 sm:h-5.5 sm:w-5.5 flex-shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" aria-hidden="true"><path d="M7 7h10v10"></path><path d="M7 17 17 7"></path></svg></a>
+                                </div>
+                                <div class="mt-6 flex items-center justify-center gap-6 border-t border-[#1a1a1a] pt-5 text-[10px] text-gray-500 font-mono uppercase tracking-widest"><span class="flex items-center gap-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check h-4 w-4 text-[#00ff66]" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg>Checkout Hotmart</span><span>•</span><span>Acesso Imediato</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="faq" class="relative py-20 bg-[#111111]/40 border-y border-[#1a1a1a]">
+                    <div class="absolute left-1/4 top-1/2 -translate-y-1/2 -z-10 h-[300px] w-[300px] rounded-full bg-[#00ff66]/5 blur-[120px]"></div>
+                    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+                        <div class="text-center max-w-2xl mx-auto">
+                            <span id="d-faq-tag" class="text-xs font-bold uppercase tracking-widest text-[#00ff66] text-glow-green">Suas Dúvidas</span>
+                            <h2 id="d-faq-titulo" class="mt-3 font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">PERGUNTAS FREQUENTES</h2>
+                            <p id="d-faq-descricao" class="mt-4 text-base text-gray-400">Ficou com alguma dúvida? Confira as respostas para as perguntas mais comuns dos nossos alunos sobre o Método BPO.</p>
+                        </div>
+                        <div id="d-faq-itens" class="mt-14 max-w-2xl mx-auto flex flex-col gap-4">
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <footer id="footer" class="bg-[#0b0b0b] border-t border-[#1a1a1a] pt-16 pb-12 text-gray-500 text-xs relative overflow-hidden">
+                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div class="grid gap-10 md:grid-cols-12 md:gap-8 border-b border-[#1a1a1a] pb-12">
+                        <div class="md:col-span-5 flex flex-col items-center text-center md:items-start md:text-left">
+                            <a href="#" class="flex items-center gap-2 font-display text-xl font-bold tracking-wider text-white">
+                                <span class="flex items-center justify-center rounded-lg bg-[#0d3b2a] p-1.5 border border-[#00ff66]/30">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up h-5 w-5 text-[#00ff66]" aria-hidden="true"><path d="M16 7h6v6"></path><path d="m22 7-8.5 8.5-5-5L2 17"></path></svg>
+                                </span>MÉTODO <span class="text-[#00ff66] text-glow-green">BPO</span>
+                            </a>
+                            <p class="mt-4 max-w-sm text-xs text-gray-500 leading-relaxed">O Método Básico para Operar (BPO) é uma metodologia simplificada focada em acelerar os primeiros passos de iniciantes no trading de forma simples, com segurança, clareza e gestão matemática de risco.</p>
+                        </div>
+                        <div class="md:col-span-3 flex flex-col items-center md:items-start">
+                            <h4 class="font-display text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Políticas Legais</h4>
+                            <ul class="space-y-3 flex flex-col items-center md:items-start">
+                                <li><a href="#termos" class="flex items-center gap-1.5 hover:text-[#00ff66] transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text h-3.5 w-3.5" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>Termos de Uso</a></li>
+                                <li><a href="#privacidade" class="flex items-center gap-1.5 hover:text-[#00ff66] transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock h-3.5 w-3.5" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Política de Privacidade</a></li>
+                            </ul>
+                        </div>
+                        <div class="md:col-span-4 flex flex-col items-center md:items-start">
+                            <h4 class="font-display text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Suporte &amp; Contato</h4>
+                            <ul class="space-y-3 flex flex-col items-center md:items-start">
+                                <li class="flex items-center gap-2 text-gray-400 font-mono"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail h-4 w-4 text-[#00ff66]" aria-hidden="true"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>suporte@metodobpo.com.br</li>
+                                <li class="text-[10px] text-gray-600">Respostas em até 24 horas úteis.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-10 flex flex-col md:flex-row items-start gap-4 rounded-xl bg-[#141414]/50 border border-[#1a1a1a] p-5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-alert h-6 w-6 text-[#ff3b30] flex-shrink-0 mt-0.5" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+                        <div class="space-y-1">
+                            <h5 class="font-bold text-gray-400">AVISO DE RISCO IMPORTANTE:</h5>
+                            <p class="text-[10px] text-gray-600 leading-relaxed uppercase">Operações de trade (day trade, swing trade, etc.) envolvem riscos significativos e podem resultar em perda parcial ou total de capital. O Método BPO ensina estratégias de simulação e conceitos matemáticos para estudo. Os resultados dos alunos podem variar. Lucros passados não são garantia ou promessa de lucros futuros. Nunca invista dinheiro que você não possa se dar ao luxo de perder.</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-gray-600">
+                        <p>© 2026 Método BPO - Todos os direitos reservados.</p>
+                        <p class="font-mono">Desenvolvido por Método BPO • CNPJ sob consulta</p>
+                    </div>
+                </div>
+            </footer>
+            
+            <a href="https://wa.me/553172188347?text=Ol%C3%A1!%20Gostaria%20de%20tirar%20d%C3%BAvidas%20sobre%20o%20M%C3%A9todo%20BPO." target="_blank" rel="noopener noreferrer" class="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25d366] text-white shadow-2xl hover:bg-[#20ba5a] transition-colors group" aria-label="Suporte WhatsApp" tabindex="0">
+                <span class="absolute -top-12 right-0 hidden sm:inline-block rounded bg-white px-2.5 py-1 text-[10px] font-bold text-gray-800 uppercase tracking-wider shadow-md whitespace-nowrap before:content-[''] before:absolute before:top-full before:right-5 before:border-4 before:border-transparent before:border-t-white">Falar com Suporte</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle h-6.5 w-6.5 fill-current" aria-hidden="true"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path></svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- SCRIPT PARA OS EFEITOS DA PÁGINA (BARRA, CONTADOR E FAQ) -->
+    <script>
+        // 1. Efeito da Barra de Progresso no Topo
+        window.addEventListener('scroll', function() {
+            const barra = document.getElementById('barra-progresso');
+            const alturaTotal = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrollAtual = document.documentElement.scrollTop;
+            const porcentagem = scrollAtual / alturaTotal;
+            barra.style.transform = 'scaleX(' + porcentagem + ')';
+        });
+
+        // 2. Efeito do Número de Pessoas (Pessoas lendo agora)
+        const contador = document.getElementById('contador-pessoas');
+        let numeroAtual = parseInt(contador.innerText) || 155;
+
+        setInterval(function() {
+            const variacao = Math.floor(Math.random() * 7) - 3;
+            numeroAtual = numeroAtual + variacao;
+
+            if (numeroAtual > 250) numeroAtual = 250;
+            if (numeroAtual < 120) numeroAtual = 120;
+
+            contador.innerText = numeroAtual;
+        }, 4000); 
+
+        // 3. Efeito de Abrir e Fechar as Perguntas Frequentes (FAQ)
+        // OBS: os itens do FAQ agora são gerados dinamicamente a partir do Firebase
+        // (ver dados.js e o script de integração no final do arquivo), então o
+        // toggle de abrir/fechar é anexado a cada item no momento em que ele é criado.
+    </script>
+
+    <!-- SCRIPT ADICIONAL: animações de surgimento + efeito neon ao clicar nos cards -->
+    <script>
+    (function () {
+        var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // -----------------------------------------------------------
+        // 1) ANIMAÇÃO DE SURGIMENTO (fade + slide-up ao rolar a tela)
+        // -----------------------------------------------------------
+        var revealSelectors = [
+            '#hero .max-w-4xl.mx-auto',
+            '#hero .max-w-5xl.mx-auto',
+            '#stats .grid > div',
+            'main .text-center.max-w-3xl',
+            'main .text-center.max-w-2xl',
+            '#testimonials .max-w-xl.mx-auto',
+            '#warranty .rounded-3xl',
+            '#pricing .rounded-3xl'
+        ];
+        // OBS: os cards de #benefits, #who-is-it-for, #content, #differentials e #faq
+        // agora são renderizados dinamicamente via dados.js (Firebase) e recebem seu
+        // próprio tratamento de efeito dentro do script de integração (ver final do arquivo).
+
+        var revealEls = document.querySelectorAll(revealSelectors.join(','));
+
+        if (!reduceMotion && 'IntersectionObserver' in window) {
+            var parentCounts = new Map();
+            revealEls.forEach(function (el) {
+                el.classList.add('reveal-init');
+                var parent = el.parentElement;
+                var i = parentCounts.get(parent) || 0;
+                parentCounts.set(parent, i + 1);
+                var delay = Math.min(i * 80, 400);
+                el.dataset.revealDelay = delay;
+                el.style.animationDelay = delay + 'ms';
+            });
+
+            var io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) return;
+                    var el = entry.target;
+                    el.classList.add('reveal-play');
+                    io.unobserve(el);
+                    var delay = parseInt(el.dataset.revealDelay || '0', 10);
+                    setTimeout(function () {
+                        el.classList.remove('reveal-init', 'reveal-play');
+                        el.style.animationDelay = '';
+                    }, delay + 830);
+                });
+            }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+            revealEls.forEach(function (el) { io.observe(el); });
+        }
+
+        // -----------------------------------------------------------
+        // 2) EFEITO NEON VERDE ao clicar/tocar nos cards
+        // -----------------------------------------------------------
+        var clickSelectors = [
+            '#hero .rounded-2xl.border.border-neutral-800',
+            '#warranty .rounded-3xl',
+            '#pricing .rounded-3xl'
+        ];
+
+        var clickEls = document.querySelectorAll(clickSelectors.join(','));
+        clickEls.forEach(function (card) {
+            card.classList.add('fx-clickable-card');
+            card.addEventListener('click', function () {
+                card.classList.remove('fx-neon-click');
+                void card.offsetWidth; // força reflow para reiniciar a animação em cliques seguidos
+                card.classList.add('fx-neon-click');
+            });
+        });
+
+        // -----------------------------------------------------------
+        // 3) EFEITO DE BRILHO (REFLEXO) ao pressionar os botões de CTA
+        // -----------------------------------------------------------
+        var shineSelectors = [
+            '#hero a[href="#pricing"].group',
+            '#benefits a[href="#pricing"]',
+            '#pricing a[href*="hotmart"]'
+        ];
+        var shineBtns = document.querySelectorAll(shineSelectors.join(','));
+        shineBtns.forEach(function (btn) {
+            btn.classList.add('fx-shine-btn');
+            btn.addEventListener('click', function () {
+                btn.classList.remove('fx-shine-play');
+                void btn.offsetWidth;
+                btn.classList.add('fx-shine-play');
+            });
+        });
+
+        // -----------------------------------------------------------
+        // 4) BRILHO NEON na barrinha de progresso do topo
+        //    (aumenta ao descer a página, diminui ao subir)
+        // -----------------------------------------------------------
+        var barraProgresso = document.getElementById('barra-progresso');
+        if (barraProgresso) {
+            var atualizarBrilhoBarra = function () {
+                var alturaTotal = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                var scrollAtual = document.documentElement.scrollTop;
+                var porcentagem = alturaTotal > 0 ? Math.min(Math.max(scrollAtual / alturaTotal, 0), 1) : 0;
+                var blur = 6 + porcentagem * 18;   // de 6px a 24px
+                var alpha = 0.35 + porcentagem * 0.55; // de 0.35 a 0.9
+                barraProgresso.style.boxShadow =
+                    '0 0 ' + blur.toFixed(0) + 'px rgba(0,255,102,' + alpha.toFixed(2) + '), ' +
+                    '0 0 ' + (blur * 2).toFixed(0) + 'px rgba(0,255,102,' + (alpha * 0.5).toFixed(2) + ')';
+            };
+            window.addEventListener('scroll', atualizarBrilhoBarra, { passive: true });
+            atualizarBrilhoBarra();
+        }
+
+        // -----------------------------------------------------------
+        // 5) CONTADOR REGRESSIVO "Esta oferta expira em breve!"
+        //    (contagem simulada de urgência, reinicia ao chegar a zero)
+        // -----------------------------------------------------------
+        var cdMin = document.getElementById('cd-min');
+        var cdSec = document.getElementById('cd-sec');
+        if (cdMin && cdSec) {
+            var gerarDuracao = function () {
+                return (13 * 60) + Math.floor(Math.random() * 7 * 60); // entre 13min e 20min
+            };
+            var segundosRestantes = gerarDuracao();
+            var atualizarContador = function () {
+                var min = Math.floor(segundosRestantes / 60);
+                var seg = segundosRestantes % 60;
+                cdMin.textContent = String(min).padStart(2, '0');
+                cdSec.textContent = String(seg).padStart(2, '0');
+                segundosRestantes = segundosRestantes > 0 ? segundosRestantes - 1 : gerarDuracao();
+            };
+            atualizarContador();
+            setInterval(atualizarContador, 1000);
+        }
+
+        // -----------------------------------------------------------
+        // 6) CARROSSEL DE DEPOIMENTOS (WhatsApp) com 4 alunos reais
+        // -----------------------------------------------------------
+        // Dados padrão (usados enquanto o Firebase não responde, ou como fallback)
+        var testimonialsData = (window.__bpoDadosIniciais && window.__bpoDadosIniciais.testimonials) || [
+            {
+                iniciais: 'FH',
+                nome: 'Flávio Heleno',
+                mensagens: [
+                    { tipo: 'recebida', texto: 'Muito bom o curso. Estudar sozinho é perda de tempo, eu estava preparado e não sabia. O método BPO me destravou.', hora: '15:13' },
+                    { tipo: 'recebida', texto: 'O método BPO revolucionou nosso dia a dia.', hora: '15:15' },
+                    { tipo: 'enviada', texto: 'Top, feliz em saber...', hora: '15:17' }
+                ]
+            },
+            {
+                iniciais: 'JE',
+                nome: 'José Emilio Barros',
+                mensagens: [
+                    { tipo: 'recebida', texto: 'Aulas bem estruturadas, professor com ótima didática, conteúdo relevante e material de boa qualidade disponibilizado para estudo.', hora: '13:05' },
+                    { tipo: 'enviada', texto: 'Que bom que gostou amigo fico feliz.', hora: '13:07' }
+                ]
+            },
+            {
+                iniciais: 'RM',
+                nome: 'Renata Machado',
+                mensagens: [
+                    { tipo: 'recebida', texto: 'Minha experiência está sendo ótima, tem me auxiliado bastante no dia a dia com o treinamento que adquiri. Nós que somos dessa área todos os dias aparecem novidades eles são bem atualizados e com a comunicação assertiva e clara para retirada de dúvidas.', hora: '10:00' },
+                    { tipo: 'enviada', texto: 'Top, que obrigado pelo feedback.', hora: '10:02' }
+                ]
+            },
+            {
+                iniciais: 'YS',
+                nome: 'Yanca Souza',
+                mensagens: [
+                    { tipo: 'recebida', texto: 'Gostaria de expressar minha profunda gratidão ao curso e especialmente à equipe de suporte, que tem sido simplesmente maravilhosa em toda a minha jornada. Sempre atenciosos, rápidos nas respostas e extremamente competentes, vocês fazem toda a diferença na experiência de aprendizado. É muito gratificante contar com um time tão comprometido em realmente ajudar, esclarecer dúvidas e oferecer apoio com gentileza e eficiência. Isso demonstra o quanto o curso valoriza seus alunos e se preocupa com a qualidade do atendimento.', hora: '09:08' },
+                    { tipo: 'enviada', texto: 'Fiquei até sem palavras...', hora: '09:10' }
+                ]
+            }
+        ];
+
+        var avatarEl = document.getElementById('testimonial-avatar');
+        var nameEl = document.getElementById('testimonial-name');
+        var bodyEl = document.getElementById('testimonial-body');
+        var scrollEl = document.getElementById('testimonial-scroll');
+        var prevBtn = document.getElementById('testimonial-prev');
+        var nextBtn = document.getElementById('testimonial-next');
+        var dotsWrap = document.getElementById('testimonial-dots');
+        var dotEls = document.querySelectorAll('.testimonial-dot');
+        var currentTestimonial = 0;
+
+        function renderizarDots() {
+            if (!dotsWrap) return;
+            var html = '';
+            for (var i = 0; i < testimonialsData.length; i++) {
+                var ativo = i === currentTestimonial;
+                html += '<button class="testimonial-dot h-2 rounded-full transition-all duration-300 ' +
+                    (ativo ? 'w-6 bg-[#00ff66] text-glow-green' : 'w-2 bg-[#2a2a2a] hover:bg-gray-600') +
+                    '" data-index="' + i + '"></button>';
+            }
+            dotsWrap.innerHTML = html;
+            dotEls = document.querySelectorAll('.testimonial-dot');
+            dotEls.forEach(function (dot, i) {
+                dot.addEventListener('click', function () {
+                    renderTestimonial(i);
+                    iniciarAutoplayDepoimentos();
+                });
+            });
+        }
+
+        function escapeHtml(texto) {
+            var div = document.createElement('div');
+            div.textContent = texto;
+            return div.innerHTML;
+        }
+
+        function bolhaRecebida(msg) {
+            return '<div class="flex w-full justify-start"><div class="relative max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed shadow-[0_1px_1px_rgba(0,0,0,0.15)] bg-white text-[#262626] rounded-tl-none border-l-4 border-l-[#128c7e]"><p class="font-sans leading-relaxed text-[11.5px] sm:text-xs">' + escapeHtml(msg.texto) + '</p><div class="mt-1 flex items-center justify-end gap-1 text-[9px] text-gray-400 font-mono select-none"><span>' + msg.hora + '</span></div></div></div>';
+        }
+
+        function bolhaEnviada(msg) {
+            return '<div class="flex w-full justify-end"><div class="relative max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed shadow-[0_1px_1px_rgba(0,0,0,0.15)] bg-[#d9fdd3] text-[#262626] rounded-tr-none border-r-4 border-r-emerald-500"><p class="font-sans leading-relaxed text-[11.5px] sm:text-xs">' + escapeHtml(msg.texto) + '</p><div class="mt-1 flex items-center justify-end gap-1 text-[9px] text-gray-400 font-mono select-none"><span>' + msg.hora + '</span><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-check h-3.5 w-3.5 text-blue-500 stroke-[2.5]" aria-hidden="true"><path d="M18 6 7 17l-5-5"></path><path d="m22 10-7.5 7.5L13 16"></path></svg></div></div></div>';
+        }
+
+        function renderTestimonial(idx) {
+            var t = testimonialsData[idx];
+            if (!t) return;
+            if (avatarEl) avatarEl.textContent = t.iniciais;
+            if (nameEl) nameEl.textContent = t.nome;
+            if (bodyEl) {
+                var html = '<div class="mx-auto my-1.5 rounded bg-white/75 border border-black/5 px-2.5 py-0.5 text-[9px] font-bold text-gray-500 uppercase tracking-wider shadow-sm font-mono">Hoje</div>';
+                t.mensagens.forEach(function (msg) {
+                    html += msg.tipo === 'enviada' ? bolhaEnviada(msg) : bolhaRecebida(msg);
+                });
+                bodyEl.innerHTML = html;
+            }
+            if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+            currentTestimonial = idx;
+            renderizarDots();
+        }
+
+        // Permite que o script de integração (dados.js) troque os depoimentos
+        // em tempo real quando o conteúdo é editado no painel de controle.
+        window.__bpoAtualizarTestimonials = function (novaLista) {
+            if (!novaLista || !novaLista.length) return;
+            testimonialsData = novaLista;
+            currentTestimonial = 0;
+            renderTestimonial(0);
+            iniciarAutoplayDepoimentos();
+        };
+
+        if (bodyEl) {
+            renderizarDots();
+            var autoplayInterval = null;
+            var pararAutoplayDepoimentos = function () {
+                if (autoplayInterval) {
+                    clearInterval(autoplayInterval);
+                    autoplayInterval = null;
+                }
+            };
+            var iniciarAutoplayDepoimentos = function () {
+                pararAutoplayDepoimentos();
+                autoplayInterval = setInterval(function () {
+                    renderTestimonial((currentTestimonial + 1) % testimonialsData.length);
+                }, 3000);
+            };
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', function () {
+                    renderTestimonial((currentTestimonial - 1 + testimonialsData.length) % testimonialsData.length);
+                    iniciarAutoplayDepoimentos(); // reinicia a contagem de 3s após ação manual
+                });
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', function () {
+                    renderTestimonial((currentTestimonial + 1) % testimonialsData.length);
+                    iniciarAutoplayDepoimentos();
+                });
+            }
+            // Pausa o autoplay quando o usuário passa o mouse por cima (desktop)
+            var chatCard = document.querySelector('#testimonials .max-w-xl.mx-auto');
+            if (chatCard) {
+                chatCard.addEventListener('mouseenter', pararAutoplayDepoimentos);
+                chatCard.addEventListener('mouseleave', iniciarAutoplayDepoimentos);
+            }
+
+            renderTestimonial(0);
+            iniciarAutoplayDepoimentos();
+        }
+    })();
+    </script>
+
+    <!-- =====================================================================
+         INTEGRAÇÃO COM O FIREBASE (dados.js)
+         Este script lê o conteúdo salvo no Firestore (através de dados.js)
+         e preenche os textos, títulos e cards da página. Ele também fica
+         "escutando" o banco de dados: qualquer alteração feita no painel
+         de controle aparece aqui automaticamente, sem precisar dar F5.
+         ===================================================================== -->
+    <script type="module">
+        import { ouvirConteudo, conteudoPadrao } from './dados.js';
+
+        // Ícones (lucide) usados nos cards de "O que você vai aprender".
+        // Eles giram em sequência conforme os cards forem adicionados/editados.
+        var ICONS_BENEFITS = [
+            '<path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>',
+            '<path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path>',
+            '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path>',
+            '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path>',
+            '<path d="M12 18V5"></path><path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"></path><path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"></path><path d="M17.997 5.125a4 4 0 0 1 2.526 5.77"></path><path d="M18 18a4 4 0 0 0 2-7.464"></path><path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"></path><path d="M6 18a4 4 0 0 1-2-7.464"></path><path d="M6.003 5.125a4 4 0 0 0-2.526 5.77"></path>',
+            '<path d="M14 4.1 12 6"></path><path d="m5.1 8-2.9-.8"></path><path d="m6 12-1.9 2"></path><path d="M7.2 2.2 8 5.1"></path><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"></path>',
+            '<circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle>',
+            '<path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"></path><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"></path><path d="M18 9h1.5a1 1 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path><path d="M6 9H4.5a1 1 0 0 1 0-5H6"></path>'
+        ];
+        var ICON_DIFFERENTIALS = '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>';
+
+        function svg(pathsHtml, cls) {
+            return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide ' + cls + '" aria-hidden="true">' + pathsHtml + '</svg>';
+        }
+
+        function escapeHtml(texto) {
+            var div = document.createElement('div');
+            div.textContent = texto == null ? '' : String(texto);
+            return div.innerHTML;
+        }
+
+        function aplicarNeonClick(el) {
+            el.classList.add('fx-clickable-card');
+            el.addEventListener('click', function () {
+                el.classList.remove('fx-neon-click');
+                void el.offsetWidth;
+                el.classList.add('fx-neon-click');
+            });
+        }
+
+        function setText(id, valor) {
+            var el = document.getElementById(id);
+            if (el && valor !== undefined && valor !== null) el.textContent = valor;
+        }
+        function setHtml(id, valor) {
+            var el = document.getElementById(id);
+            if (el && valor !== undefined && valor !== null) el.innerHTML = valor;
+        }
+
+        function renderHero(hero) {
+            if (!hero) return;
+            setText('d-hero-badge', hero.badge);
+            setText('d-hero-titulo-pre', hero.tituloPre);
+            setText('d-hero-titulo-destaque', hero.tituloDestaque);
+            setText('d-hero-subtitulo', hero.subtitulo);
+            setText('d-hero-descricao', hero.descricao);
+            (hero.selos || []).forEach(function (texto, i) { setText('d-hero-selo-' + i, texto); });
+            setText('d-hero-cta', hero.botaoTexto);
+        }
+
+        function renderStats(stats) {
+            (stats || []).forEach(function (s, i) {
+                setText('d-stat-valor-' + i, s.valor);
+                setText('d-stat-label-' + i, s.label);
+            });
+        }
+
+        function renderBenefits(benefits) {
+            if (!benefits) return;
+            setText('d-benefits-tag', benefits.tag);
+            setText('d-benefits-titulo', benefits.titulo);
+            setText('d-benefits-descricao', benefits.descricao);
+            var wrap = document.getElementById('d-benefits-cards');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            (benefits.cards || []).forEach(function (card, i) {
+                var icone = ICONS_BENEFITS[i % ICONS_BENEFITS.length];
+                var div = document.createElement('div');
+                div.className = 'group relative rounded-xl border border-[#222] bg-[#161616]/80 p-6 transition-all duration-300 hover:border-[#00ff66]/30 hover:shadow-[0_0_20px_rgba(0,255,102,0.1)] overflow-hidden';
+                div.innerHTML =
+                    '<div class="absolute -right-12 -top-12 -z-10 h-24 w-24 rounded-full bg-[#00ff66]/10 blur-xl transition-all duration-300 group-hover:scale-150 group-hover:bg-[#00ff66]/20"></div>' +
+                    '<div class="inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] transition-colors duration-300 group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:border-transparent">' + svg(icone, 'h-6 w-6') + '</div>' +
+                    '<h3 class="mt-5 font-display text-lg font-bold text-white tracking-tight group-hover:text-[#00ff66] transition-colors">' + escapeHtml(card.titulo) + '</h3>' +
+                    '<p class="mt-2.5 text-sm leading-relaxed text-gray-400">' + escapeHtml(card.descricao) + '</p>' +
+                    '<div class="absolute bottom-0 left-0 h-[2px] w-0 bg-[#00ff66] transition-all duration-300 group-hover:w-full"></div>';
+                aplicarNeonClick(div);
+                wrap.appendChild(div);
+            });
+        }
+
+        function renderPerfilAluno(perfil) {
+            if (!perfil) return;
+            setText('d-perfil-tag', perfil.tag);
+            setText('d-perfil-titulo', perfil.titulo);
+            setText('d-perfil-descricao', perfil.descricao);
+            var wrap = document.getElementById('d-perfil-itens');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            (perfil.itens || []).forEach(function (texto) {
+                var div = document.createElement('div');
+                div.className = 'flex items-start gap-3 rounded-lg border border-[#1a1a1a] bg-[#141414]/50 p-4 hover:border-[#00ff66]/20 transition-all';
+                div.innerHTML = svg('<circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path>', 'mt-0.5 h-5 w-5 flex-shrink-0 text-[#00ff66] text-glow-green') +
+                    '<span class="text-sm font-medium text-gray-300 leading-snug">' + escapeHtml(texto) + '</span>';
+                wrap.appendChild(div);
+            });
+        }
+
+        function renderIncluso(incluso) {
+            if (!incluso) return;
+            setText('d-incluso-tag', incluso.tag);
+            setText('d-incluso-titulo', incluso.titulo);
+            setText('d-incluso-descricao', incluso.descricao);
+            var wrap = document.getElementById('d-incluso-itens');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            (incluso.itens || []).forEach(function (item) {
+                var destaque = !!item.destaque;
+                var div = document.createElement('div');
+                div.className = 'group relative flex items-center gap-3.5 rounded-xl border p-5 transition-all duration-300 ' +
+                    (destaque ? 'border-[#00ff66]/40 bg-[#0d3b2a]/40 shadow-[0_0_20px_rgba(0,255,102,0.15)]' : 'border-[#1a1a1a] bg-[#161616]/70 hover:border-[#2a2a2a]');
+                div.innerHTML =
+                    '<div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 ' + (destaque ? 'border-[#00ff66] bg-[#00ff66] text-[#0b0b0b]' : 'border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]') + '">' + svg('<path d="M20 6 9 17l-5-5"></path>', 'h-3.5 w-3.5 stroke-[3]') + '</div>' +
+                    '<span class="text-sm font-semibold tracking-tight ' + (destaque ? 'text-[#00ff66] text-glow-green' : 'text-gray-200') + '">' + escapeHtml(item.texto) + '</span>' +
+                    (destaque ? '<span class="absolute right-3 top-3 rounded bg-[#00ff66]/10 px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-[#00ff66] uppercase border border-[#00ff66]/20">Destaque</span>' : '');
+                wrap.appendChild(div);
+            });
+        }
+
+        function renderDifferentials(diff) {
+            if (!diff) return;
+            setText('d-differentials-tag', diff.tag);
+            setText('d-differentials-titulo', diff.titulo);
+            setText('d-differentials-descricao', diff.descricao);
+            var wrap = document.getElementById('d-differentials-cards');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            (diff.cards || []).forEach(function (card) {
+                var div = document.createElement('div');
+                div.className = 'group relative rounded-xl border border-[#1e1e1e] bg-[#161616]/85 p-6 hover:border-[#00ff66]/30 transition-all duration-300 overflow-hidden';
+                div.innerHTML =
+                    '<div class="flex h-11 w-11 items-center justify-center rounded-lg bg-[#0d3b2a] border border-[#00ff66]/20 text-[#00ff66] group-hover:bg-[#00ff66] group-hover:text-[#0b0b0b] group-hover:scale-105 transition-all duration-300">' + svg(ICON_DIFFERENTIALS, 'h-5 w-5 fill-current') + '</div>' +
+                    '<h3 class="mt-5 font-display text-lg font-bold tracking-tight text-white group-hover:text-[#00ff66] transition-colors">' + escapeHtml(card.titulo) + '</h3>' +
+                    '<p class="mt-2.5 text-sm leading-relaxed text-gray-400">' + escapeHtml(card.descricao) + '</p>' +
+                    '<div class="absolute right-0 top-0 h-0.5 w-0 bg-gradient-to-r from-emerald-500 to-[#00ff66] transition-all duration-300 group-hover:w-full"></div>';
+                aplicarNeonClick(div);
+                wrap.appendChild(div);
+            });
+        }
+
+        function renderWarranty(w) {
+            if (!w) return;
+            setText('d-warranty-titulo', w.titulo);
+            setHtml('d-warranty-texto', w.texto);
+        }
+
+        function renderPricing(p) {
+            if (!p) return;
+            setText('d-pricing-tag', p.tag);
+            setText('d-pricing-titulo', p.titulo);
+            setText('d-pricing-descricao', p.descricao);
+            setText('d-pricing-desconto', p.desconto);
+            setText('d-pricing-de', p.precoDe);
+            setText('d-pricing-por', p.precoPor);
+            setText('d-pricing-parcelas', p.parcelas);
+            setText('d-pricing-botao-texto', p.botaoTexto);
+            var link = document.getElementById('d-pricing-link');
+            if (link && p.linkPagamento) link.setAttribute('href', p.linkPagamento);
+        }
+
+        function renderFaq(lista) {
+            var wrap = document.getElementById('d-faq-itens');
+            if (!wrap) return;
+            wrap.innerHTML = '';
+            (lista || []).forEach(function (item) {
+                var div = document.createElement('div');
+                div.className = 'rounded-xl border border-[#1e1e1e] bg-[#161616]/90 overflow-hidden transition-all duration-300 hover:border-[#333]';
+                div.innerHTML =
+                    '<button class="faq-button flex w-full items-center justify-between p-5 text-left text-white cursor-pointer">' +
+                    '<div class="flex items-center gap-3.5 pr-4">' + svg('<circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path>', 'h-5 w-5 flex-shrink-0 text-[#00ff66]') + '<span class="text-sm font-bold tracking-tight">' + escapeHtml(item.pergunta) + '</span></div>' +
+                    '<div class="faq-icon text-gray-500 transition-transform duration-300">' + svg('<path d="m6 9 6 6 6-6"></path>', 'h-5 w-5 text-[#00ff66]') + '</div>' +
+                    '</button>' +
+                    '<div class="faq-answer hidden px-5 pb-5 pt-0 text-sm text-gray-400 leading-relaxed">' + escapeHtml(item.resposta) + '</div>';
+                var btn = div.querySelector('.faq-button');
+                btn.addEventListener('click', function () {
+                    var resposta = div.querySelector('.faq-answer');
+                    var icone = div.querySelector('.faq-icon');
+                    var fechado = resposta.classList.contains('hidden');
+                    resposta.classList.toggle('hidden');
+                    icone.style.transform = fechado ? 'rotate(180deg)' : 'rotate(0deg)';
+                });
+                wrap.appendChild(div);
+            });
+        }
+
+        function renderTudo(data) {
+            data = data || conteudoPadrao;
+            renderHero(data.hero);
+            renderStats(data.stats);
+            renderBenefits(data.benefits);
+            renderPerfilAluno(data.perfilAluno);
+            renderIncluso(data.incluso);
+            renderDifferentials(data.differentials);
+            renderWarranty(data.warranty);
+            renderPricing(data.pricing);
+            renderFaq(data.faq);
+            if (typeof window.__bpoAtualizarTestimonials === 'function' && data.testimonials) {
+                window.__bpoAtualizarTestimonials(data.testimonials);
+            }
+        }
+
+        // Escuta o Firestore em tempo real: qualquer alteração salva no painel
+        // de controle aparece aqui automaticamente (sem precisar recarregar a página).
+        ouvirConteudo(renderTudo);
+    </script>
+</body>
+</html>
