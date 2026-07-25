@@ -151,103 +151,151 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px;
-            background-color: #0b0b0b;
+            padding: 32px 24px;
+            background: #000000;
             opacity: 1;
-            transition: opacity 0.6s ease;
+            transition: opacity 0.8s ease, transform 0.8s ease;
         }
         #tela-carregamento.fx-loader-out {
             opacity: 0;
+            transform: translateY(-12px);
             pointer-events: none;
         }
+
+        /* Brilho suave e difuso atrás da marca */
         .fx-load-glow {
             position: absolute;
             left: 50%;
-            top: 50%;
-            width: 460px;
-            height: 460px;
-            max-width: 120vw;
-            max-height: 120vw;
+            top: 44%;
+            width: 560px;
+            height: 560px;
+            max-width: 135vw;
+            max-height: 135vw;
             transform: translate(-50%, -50%);
-            background: rgba(0, 255, 102, 0.10);
-            filter: blur(120px);
+            background: radial-gradient(circle,
+                        rgba(0, 255, 102, 0.11) 0%,
+                        rgba(0, 255, 102, 0.035) 40%,
+                        rgba(0, 0, 0, 0) 70%);
             border-radius: 9999px;
             pointer-events: none;
         }
-        .fx-load-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 26px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            color: #ffffff;
+
+        /* Marca: "MÉTODO" fino e espaçado sobre "BPO" grande em neon */
+        .fx-load-marca {
             position: relative;
+            text-align: center;
+            line-height: 1;
         }
-        .fx-load-logo-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 9px;
-            border-radius: 12px;
-            background-color: #0d3b2a;
-            border: 1px solid rgba(0, 255, 102, 0.3);
+        .fx-load-metodo {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.62em;
+            text-indent: 0.62em; /* compensa o espaco extra a direita */
+            text-transform: uppercase;
+            color: #707070;
+        }
+        .fx-load-bpo {
+            display: block;
+            margin-top: 16px;
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-indent: 0.14em;
             color: #00ff66;
+            animation: fxLoadRespira 3.4s ease-in-out infinite;
         }
-        .fx-load-logo .fx-load-bpo {
-            color: #00ff66;
-            text-shadow: 0 0 12px rgba(0, 255, 102, 0.6);
+        @keyframes fxLoadRespira {
+            0%, 100% { text-shadow: 0 0 22px rgba(0, 255, 102, 0.32); }
+            50%      { text-shadow: 0 0 36px rgba(0, 255, 102, 0.62); }
         }
+
+        /* Fio divisorio quase imperceptivel */
+        .fx-load-divisor {
+            margin-top: 36px;
+            width: 100%;
+            max-width: 300px;
+            height: 1px;
+            background: linear-gradient(90deg,
+                        rgba(255,255,255,0) 0%,
+                        rgba(255,255,255,0.09) 50%,
+                        rgba(255,255,255,0) 100%);
+        }
+
         .fx-load-track {
             position: relative;
-            margin-top: 38px;
+            margin-top: 36px;
             width: 100%;
-            max-width: 320px;
+            max-width: 300px;
         }
         .fx-load-rail {
-            height: 6px;
+            position: relative;
+            height: 2px;
             width: 100%;
             border-radius: 9999px;
-            background-color: #171717;
-            border: 1px solid #232323;
+            background-color: #1a1a1a;
             overflow: hidden;
         }
         .fx-load-fill {
+            position: relative;
             height: 100%;
             width: 0%;
             border-radius: 9999px;
-            background: linear-gradient(90deg, #00b34a 0%, #00ff66 60%, #7dffb0 100%);
-            box-shadow: 0 0 14px rgba(0, 255, 102, 0.75);
-            transition: width 0.18s ease-out;
+            background: linear-gradient(90deg, #00a844 0%, #00ff66 70%, #baffd4 100%);
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.8);
+            transition: width 0.25s ease-out;
         }
+        /* Reflexo que desliza sobre a barra */
+        .fx-load-fill::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg,
+                        rgba(255,255,255,0) 0%,
+                        rgba(255,255,255,0.8) 50%,
+                        rgba(255,255,255,0) 100%);
+            transform: translateX(-100%);
+            animation: fxLoadShimmer 2s ease-in-out infinite;
+        }
+        @keyframes fxLoadShimmer {
+            0%   { transform: translateX(-100%); }
+            65%  { transform: translateX(100%); }
+            100% { transform: translateX(100%); }
+        }
+
         .fx-load-info {
-            margin-top: 14px;
+            margin-top: 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 11px;
-            letter-spacing: 0.06em;
+            gap: 16px;
         }
         .fx-load-status {
-            color: #7a7a7a;
+            font-size: 9.5px;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #5c5c5c;
         }
         .fx-load-pct {
-            color: #00ff66;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12px;
             font-weight: 700;
-            text-shadow: 0 0 12px rgba(0, 255, 102, 0.6);
+            letter-spacing: 0.04em;
+            color: #00ff66;
+            text-shadow: 0 0 12px rgba(0, 255, 102, 0.5);
+            font-variant-numeric: tabular-nums;
         }
-        .fx-load-legenda {
-            margin-top: 26px;
-            font-size: 10px;
-            letter-spacing: 0.22em;
-            text-transform: uppercase;
-            color: #4a4a4a;
-            text-align: center;
+
+        @media (max-width: 380px) {
+            .fx-load-bpo { font-size: 40px; }
+            .fx-load-metodo { font-size: 11px; letter-spacing: 0.5em; text-indent: 0.5em; }
         }
         @media (prefers-reduced-motion: reduce) {
-            #tela-carregamento { transition: none; }
+            #tela-carregamento { transition: opacity 0.3s ease; }
             .fx-load-fill { transition: none; }
+            .fx-load-fill::after { animation: none; opacity: 0; }
+            .fx-load-bpo { animation: none; text-shadow: 0 0 26px rgba(0, 255, 102, 0.45); }
         }
     </style>
 </head>
@@ -262,22 +310,21 @@
     <div id="tela-carregamento">
         <div class="fx-load-glow"></div>
 
-        <div class="fx-load-logo">
-            <span class="fx-load-logo-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="height:22px;width:22px" aria-hidden="true"><path d="M16 7h6v6"></path><path d="m22 7-8.5 8.5-5-5L2 17"></path></svg>
-            </span>
-            MÉTODO&nbsp;<span class="fx-load-bpo">BPO</span>
+        <div class="fx-load-marca">
+            <span class="fx-load-metodo">M&eacute;todo</span>
+            <span class="fx-load-bpo">BPO</span>
         </div>
+
+        <div class="fx-load-divisor"></div>
 
         <div class="fx-load-track">
             <div class="fx-load-rail">
                 <div id="carregamento-barra" class="fx-load-fill"></div>
             </div>
             <div class="fx-load-info">
-                <span id="carregamento-status" class="fx-load-status">Iniciando…</span>
+                <span id="carregamento-status" class="fx-load-status">Iniciando</span>
                 <span id="carregamento-pct" class="fx-load-pct">0%</span>
             </div>
-            <div class="fx-load-legenda">Preparando sua experiência</div>
         </div>
     </div>
 
@@ -766,8 +813,10 @@
     <!-- SCRIPT PARA OS EFEITOS DA PÁGINA (BARRA, CONTADOR E FAQ) -->
     <!-- =====================================================================
          CONTROLE DA TELA DE CARREGAMENTO
-         A barra só chega a 100% quando as três etapas terminam de verdade:
-         a página, o conteúdo do Firebase e o vídeo da apresentação.
+         A barra mostra o progresso REAL: o video da apresentacao e baixado
+         aqui por completo (via fetch, medindo byte a byte), porque os
+         navegadores de celular ignoram o "preload" do <video> para economizar
+         dados. Assim, quando a barra chega a 100%, o play e instantaneo.
          ===================================================================== -->
     <script>
     (function () {
@@ -779,35 +828,34 @@
         var statusEl = document.getElementById('carregamento-status');
         var player = document.getElementById('d-hero-video-player');
 
+        var ARQUIVO_VIDEO = 'apresentacao.mp4';
+        var LIMITE_MEMORIA = 150 * 1024 * 1024; // acima disso, nao guarda em memoria
+
         var inicio = Date.now();
-        var TEMPO_MINIMO = 1500;   // não some rápido demais (evita "piscar" a tela)
-        var TEMPO_MAXIMO = 12000;  // trava de segurança: nunca prende o usuário
+        var TEMPO_MINIMO = 1600;   // nao some rapido demais (evita "piscar")
+        var TEMPO_MAXIMO = 25000;  // trava de seguranca: nunca prende o usuario
 
-        // Cada etapa concluída libera uma fatia da barra
-        var etapas = {
-            pagina:   { peso: 25, ok: false }, // HTML, CSS e imagens
-            conteudo: { peso: 30, ok: false }, // textos vindos do Firebase (dados.js)
-            video:    { peso: 45, ok: false }  // apresentacao.mp4 pronto para dar play
-        };
+        // Pesos da barra. O video pesa mais porque e o que realmente demora.
+        var PESO_PAGINA = 15, PESO_CONTEUDO = 20, PESO_VIDEO = 65;
 
+        var paginaOk = false;
+        var conteudoOk = false;
+        var videoOk = false;
+        var fracaoVideo = 0;       // 0 a 1 -> quanto do video ja baixou de fato
         var progresso = 0;
         var finalizado = false;
 
-        function concluir(nome) {
-            if (etapas[nome]) etapas[nome].ok = true;
-        }
-
         function alvoAtual() {
-            var total = 0;
-            for (var k in etapas) { if (etapas[k].ok) total += etapas[k].peso; }
-            return total;
+            return (paginaOk ? PESO_PAGINA : 0) +
+                   (conteudoOk ? PESO_CONTEUDO : 0) +
+                   (PESO_VIDEO * Math.min(fracaoVideo, 1));
         }
 
-        function textoStatus(p) {
-            if (p < 25) return 'Iniciando…';
-            if (p < 55) return 'Carregando conteúdo…';
-            if (p < 92) return 'Preparando a apresentação…';
-            return 'Quase lá…';
+        function textoStatus() {
+            if (!paginaOk) return 'Iniciando';
+            if (!conteudoOk) return 'Carregando conte\u00fado';
+            if (!videoOk) return 'Carregando apresenta\u00e7\u00e3o';
+            return 'Pronto';
         }
 
         function esconder() {
@@ -817,101 +865,139 @@
                 if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
                 // recalcula a barrinha de progresso do topo depois que a rolagem volta
                 window.dispatchEvent(new Event('scroll'));
-            }, 700);
+            }, 850);
         }
 
         var loop = setInterval(function () {
             var decorrido = Date.now() - inicio;
             var alvo = alvoAtual();
-            if (decorrido >= TEMPO_MAXIMO) alvo = 100; // libera mesmo se algo falhar
+            var estourouTempo = decorrido >= TEMPO_MAXIMO;
+            if (estourouTempo) alvo = 100;
+
+            // Tudo carregou (ou a trava de tempo agiu)? Entao a barra pode fechar.
+            var liberado = (paginaOk && conteudoOk && videoOk && decorrido >= TEMPO_MINIMO) ||
+                           estourouTempo;
 
             if (progresso < alvo) {
-                // aproxima suavemente da fatia já liberada
-                progresso += Math.max(0.7, (alvo - progresso) * 0.09);
+                progresso += Math.max(0.6, (alvo - progresso) * 0.10);
                 if (progresso > alvo) progresso = alvo;
-            } else if (alvo < 100) {
-                // Se uma etapa demora, a barra continua avançando devagarinho
-                // rumo a um teto que sobe com o tempo (nunca parece travada).
-                var teto = Math.min(95, alvo + 8 + (decorrido / TEMPO_MAXIMO) * 24);
-                if (progresso < teto) progresso += Math.max(0.05, (teto - progresso) * 0.02);
+            } else if (!liberado) {
+                // Caso raro (arquivo sem resposta): a barra segue avancando
+                // devagarinho rumo a um teto que sobe, para nunca parecer travada.
+                var teto = Math.min(96, alvo + 6 + (decorrido / TEMPO_MAXIMO) * 20);
+                if (progresso < teto) progresso += Math.max(0.03, (teto - progresso) * 0.012);
             }
 
-            var pronto = (alvo >= 100) && (decorrido >= TEMPO_MINIMO);
-            if (pronto) {
-                progresso = 100;
-            } else if (progresso > 99) {
-                progresso = 99;
-            }
+            // Enquanto nao estiver liberado, a barra segura em 99% no maximo
+            if (!liberado && progresso > 99) progresso = 99;
+
+            // So marca 100% depois de a barra ter subido ate quase o fim,
+            // assim a chegada e sempre suave (nunca um salto seco).
+            var pronto = liberado && progresso >= 99.4;
+            if (pronto) progresso = 100;
 
             var mostrado = Math.floor(progresso);
             if (barra) barra.style.width = mostrado + '%';
             if (pctEl) pctEl.textContent = mostrado + '%';
-            if (statusEl) statusEl.textContent = textoStatus(mostrado);
+            if (statusEl) statusEl.textContent = textoStatus();
 
             if (pronto && !finalizado) {
                 finalizado = true;
                 clearInterval(loop);
-                setTimeout(esconder, 450); // deixa o 100% respirar antes de sumir
+                setTimeout(esconder, 500); // deixa o 100% respirar antes de sumir
             }
         }, 60);
 
-        // ---- Etapa 1: página carregada (HTML, CSS, imagens) ----
+        // ---- Etapa 1: pagina carregada (HTML, CSS, imagens) ----
         if (document.readyState === 'complete') {
-            concluir('pagina');
+            paginaOk = true;
         } else {
-            window.addEventListener('load', function () { concluir('pagina'); });
+            window.addEventListener('load', function () { paginaOk = true; });
         }
 
-        // ---- Etapa 2: conteúdo do Firebase renderizado ----
-        // O script de integração (dados.js) avisa chamando esta função.
-        window.__bpoConteudoPronto = function () { concluir('conteudo'); };
+        // ---- Etapa 2: conteudo do Firebase renderizado ----
+        window.__bpoConteudoPronto = function () { conteudoOk = true; };
 
-        // ---- Etapa 3: vídeo da apresentação pronto para tocar ----
-        // O vídeo começa a baixar AQUI, durante a tela de carregamento, para que
-        // o play seja instantâneo quando o usuário clicar em "ASSISTIR APRESENTAÇÃO".
-        if (player) {
-            var videoLiberado = false;
-            var liberarVideo = function () {
-                if (videoLiberado) return;
-                videoLiberado = true;
-                concluir('video');
-            };
+        // ---- Etapa 3: video da apresentacao baixado de verdade ----
+        function marcarVideoPronto() {
+            if (videoOk) return;
+            videoOk = true;
+            fracaoVideo = 1;
+        }
 
-            player.setAttribute('preload', 'auto');
-            if (!player.getAttribute('src')) {
-                player.setAttribute('src', 'apresentacao.mp4');
+        function usarStreamingDireto() {
+            // Plano B: se o download direto falhar, o video toca em streaming
+            if (player && !player.getAttribute('src')) {
+                player.setAttribute('preload', 'auto');
+                player.setAttribute('src', ARQUIVO_VIDEO);
+                try { player.load(); } catch (e) { /* ignora */ }
+            }
+            marcarVideoPronto();
+        }
+
+        function aplicarBlob(blob) {
+            try {
+                var url = URL.createObjectURL(blob);
+                window.__bpoVideoBlobUrl = url;
+                // So troca a fonte se o video ainda nao comecou a tocar
+                if (player && player.paused && !player.currentTime) {
+                    player.setAttribute('src', url);
+                }
+            } catch (e) { /* ignora */ }
+            marcarVideoPronto();
+        }
+
+        function baixarVideo() {
+            if (!player) { marcarVideoPronto(); return; }
+
+            // Evita download duplicado: quem baixa e o fetch abaixo, nao o <video>
+            player.setAttribute('preload', 'none');
+
+            if (!window.fetch || !window.URL || !URL.createObjectURL) {
+                usarStreamingDireto();
+                return;
             }
 
-            player.addEventListener('canplaythrough', liberarVideo);
-            player.addEventListener('error', liberarVideo);  // arquivo ausente não trava o site
-            player.addEventListener('canplay', function () {
-                // se o buffer completo demorar, libera assim mesmo depois de 3s
-                setTimeout(liberarVideo, 3000);
-            });
-            player.addEventListener('loadeddata', function () {
-                setTimeout(liberarVideo, 4000);
-            });
-            // No celular os navegadores limitam o pré-carregamento para economizar
-            // dados, então também liberamos quando já houver buffer suficiente.
-            player.addEventListener('loadedmetadata', function () {
-                setTimeout(liberarVideo, 5000);
-            });
-            player.addEventListener('progress', function () {
-                try {
-                    if (!player.buffered || !player.buffered.length) return;
-                    var fimBuffer = player.buffered.end(player.buffered.length - 1);
-                    var duracao = player.duration || 0;
-                    // 8 segundos de vídeo em buffer (ou 25% do total) já bastam
-                    if (fimBuffer >= 8 || (duracao > 0 && fimBuffer / duracao >= 0.25)) {
-                        liberarVideo();
-                    }
-                } catch (e) { /* ignora */ }
-            });
+            fetch(ARQUIVO_VIDEO).then(function (resp) {
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-            try { player.load(); } catch (e) { liberarVideo(); }
-        } else {
-            concluir('video');
+                var total = parseInt(resp.headers.get('Content-Length') || '0', 10);
+
+                // Sem streaming de leitura (navegador antigo) ou arquivo enorme:
+                // baixa inteiro de uma vez, sem progresso detalhado.
+                if (!resp.body || !resp.body.getReader || (total && total > LIMITE_MEMORIA)) {
+                    if (total && total > LIMITE_MEMORIA) { usarStreamingDireto(); return null; }
+                    return resp.blob().then(aplicarBlob);
+                }
+
+                var leitor = resp.body.getReader();
+                var pedacos = [];
+                var recebido = 0;
+
+                function ler() {
+                    return leitor.read().then(function (r) {
+                        if (r.done) {
+                            return aplicarBlob(new Blob(pedacos, { type: 'video/mp4' }));
+                        }
+                        pedacos.push(r.value);
+                        recebido += r.value.length;
+                        if (total > 0) {
+                            // progresso real do download do video
+                            fracaoVideo = Math.min(recebido / total, 0.995);
+                        } else {
+                            // servidor nao informou o tamanho: avanco estimado
+                            fracaoVideo = Math.min(fracaoVideo + 0.008, 0.9);
+                        }
+                        return ler();
+                    });
+                }
+                return ler();
+            }).catch(function () {
+                usarStreamingDireto();
+            });
         }
+
+        baixarVideo();
     })();
     </script>
 
@@ -1321,10 +1407,11 @@
             var capaEl = document.getElementById('d-hero-video-capa');
             if (capaEl && hero.capaVideo) capaEl.setAttribute('src', hero.capaVideo);
 
-            // O player já começou a baixar "apresentacao.mp4" na tela de
-            // carregamento. Se o painel apontar para outro arquivo, troca aqui.
+            // O video ja foi baixado por completo na tela de carregamento e
+            // guardado em memoria. So trocamos a fonte se o painel apontar
+            // para OUTRO arquivo (caso contrario, perderiamos o pre-carregamento).
             var playerEl = document.getElementById('d-hero-video-player');
-            if (playerEl && hero.videoArquivo) {
+            if (playerEl && hero.videoArquivo && !window.__bpoVideoBlobUrl) {
                 var desejado = encodeURI(hero.videoArquivo);
                 if ((playerEl.getAttribute('src') || '') !== desejado) {
                     playerEl.setAttribute('src', desejado);
@@ -1339,9 +1426,14 @@
                 var player = document.getElementById('d-hero-video-player');
                 if (thumb && player) {
                     thumb.addEventListener('click', function () {
-                        var arquivo = (hero && hero.videoArquivo) ? hero.videoArquivo : 'apresentacao.mp4';
+                        // Prioridade: o video ja baixado na tela de carregamento
+                        // (play instantaneo). Se por algum motivo nao existir,
+                        // cai no arquivo direto em streaming.
                         if (!player.getAttribute('src')) {
-                            player.setAttribute('src', encodeURI(arquivo));
+                            var fonte = window.__bpoVideoBlobUrl ||
+                                        encodeURI((hero && hero.videoArquivo) ? hero.videoArquivo : 'apresentacao.mp4');
+                            player.setAttribute('preload', 'auto');
+                            player.setAttribute('src', fonte);
                         }
                         thumb.classList.add('hidden');
                         player.classList.remove('hidden');
