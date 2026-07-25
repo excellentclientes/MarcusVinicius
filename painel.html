@@ -7,9 +7,14 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
     body { background-color: #0b0b0b; }
-    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-thumb { background-color: #2a2a2a; border-radius: 8px; }
+
+    section[id] { scroll-margin-top: 132px; }
+    @media (min-width: 768px) { section[id] { scroll-margin-top: 96px; } }
+
     .campo-label { display:block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #7fffb0; margin-bottom: 4px; }
+    .campo-dica { font-size: 11.5px; color: #6b6b6b; margin-top: 4px; line-height: 1.4; }
     .campo-input, .campo-textarea {
         width: 100%; background:#161616; border:1px solid #2a2a2a; border-radius:8px;
         padding: 10px 12px; color:#fff; font-size: 14px; outline: none;
@@ -17,181 +22,374 @@
     .campo-input:focus, .campo-textarea:focus { border-color:#00ff66; box-shadow: 0 0 0 2px rgba(0,255,102,.15); }
     .campo-textarea { min-height: 70px; resize: vertical; }
     .card-editor { background:#121212; border:1px solid #222; border-radius:14px; padding:16px; }
+    .card-item { background:#151515; border:1px solid #232323; border-radius:12px; padding:14px; transition: border-color .15s ease; }
+    .card-item:hover { border-color:#2f2f2f; }
+
     .btn-primario {
         background:#00ff66; color:#0b0b0b; font-weight:800; border-radius:10px; padding:10px 18px;
-        font-size:13px; letter-spacing:.03em; transition: all .15s ease;
+        font-size:13px; letter-spacing:.03em; transition: all .15s ease; display:inline-flex; align-items:center; gap:6px;
     }
     .btn-primario:hover { background:#fff; transform: translateY(-1px); }
+    .btn-primario:disabled { opacity:.6; pointer-events:none; transform:none; }
     .btn-secundario {
         background:#1a1a1a; color:#ddd; border:1px solid #2a2a2a; font-weight:700; border-radius:10px; padding:9px 16px; font-size:13px;
+        display:inline-flex; align-items:center; gap:6px; transition: all .15s ease;
     }
     .btn-secundario:hover { border-color:#00ff66; color:#00ff66; }
-    .btn-remover { color:#ff6b6b; font-size:12px; font-weight:700; }
+    .btn-icone {
+        display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px;
+        background:#1a1a1a; border:1px solid #2a2a2a; color:#999; flex-shrink:0; transition: all .15s ease;
+    }
+    .btn-icone:hover:not(:disabled) { border-color:#00ff66; color:#00ff66; }
+    .btn-icone:disabled { opacity:.3; pointer-events:none; }
+    .btn-remover { color:#ff6b6b; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:4px; flex-shrink:0; }
     .btn-remover:hover { text-decoration: underline; }
-    .secao-titulo { font-size: 18px; font-weight: 800; color:#fff; letter-spacing:-.01em; }
-    .secao-sub { font-size: 12px; color:#888; }
+
+    .secao-titulo { font-size: 17px; font-weight: 800; color:#fff; letter-spacing:-.01em; }
+    .secao-sub { font-size: 12.5px; color:#888; margin-top: 1px; }
+    .secao-icone {
+        display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:10px;
+        background:#0d3b2a; border:1px solid rgba(0,255,102,.3); color:#00ff66; flex-shrink:0;
+    }
+    .contador-badge {
+        display:inline-flex; align-items:center; font-size:11px; font-weight:700; color:#7fffb0;
+        background:rgba(0,255,102,.08); border:1px solid rgba(0,255,102,.2); border-radius:999px; padding:2px 9px; margin-left:8px;
+    }
+    .estado-vazio {
+        border:1px dashed #2a2a2a; border-radius:12px; padding:22px 16px; text-align:center; color:#666; font-size:13px;
+    }
+    .numero-item {
+        display:flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:999px;
+        background:#1e1e1e; color:#7fffb0; font-size:11px; font-weight:800; flex-shrink:0;
+    }
+
+    /* ---- Navegação lateral (desktop) e em pílulas (mobile) ---- */
+    #nav-desktop a {
+        display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:9px; font-size:13px; font-weight:600;
+        color:#888; border:1px solid transparent; transition: all .15s ease;
+    }
+    #nav-desktop a:hover { color:#ddd; background:#141414; }
+    #nav-desktop a.ativo { color:#00ff66; background:rgba(0,255,102,.08); border-color:rgba(0,255,102,.25); }
+    #nav-desktop a svg { width:15px; height:15px; flex-shrink:0; }
+
+    #nav-mobile { display:flex; gap:6px; overflow-x:auto; padding: 0 4px 2px; -webkit-overflow-scrolling: touch; }
+    #nav-mobile::-webkit-scrollbar { display:none; }
+    #nav-mobile a {
+        flex-shrink:0; font-size:12px; font-weight:700; color:#999; background:#151515; border:1px solid #262626;
+        border-radius:999px; padding:7px 13px; white-space:nowrap; transition: all .15s ease;
+    }
+    #nav-mobile a.ativo { color:#00ff66; border-color:rgba(0,255,102,.4); background:rgba(0,255,102,.08); }
+
+    .pulso-status { display:inline-block; width:7px; height:7px; border-radius:999px; margin-right:6px; flex-shrink:0; }
+    .pulso-ok { background:#00ff66; box-shadow:0 0 6px rgba(0,255,102,.8); }
+    .pulso-alerta { background:#ffb020; box-shadow:0 0 6px rgba(255,176,32,.8); animation: pulsar 1.6s ease-in-out infinite; }
+    .pulso-carregando { background:#666; animation: pulsar 1.2s ease-in-out infinite; }
+    @keyframes pulsar { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+
+    .girando { animation: girar 0.8s linear infinite; }
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    .destaque-preview {
+        position:relative; width:100%; aspect-ratio:16/9; border-radius:10px; overflow:hidden; border:1px solid #2a2a2a;
+        background: #000 repeating-conic-gradient(#111 0% 25%, #0c0c0c 0% 50%) 50% / 16px 16px;
+    }
+    .destaque-preview img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 </style>
 </head>
-<body class="min-h-screen text-gray-200 font-sans pb-32">
+<body class="min-h-screen text-gray-200 font-sans pb-28">
 
 <div id="tela-painel">
-    <header class="sticky top-0 z-50 bg-[#0b0b0b]/95 backdrop-blur border-b border-[#1a1a1a] px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-        <div>
-            <h1 class="text-lg font-black text-white">Painel de Controle <span class="text-[#00ff66]">BPO</span></h1>
-            <p id="status-conexao" class="text-[11px] text-gray-500">Carregando dados...</p>
+    <header class="sticky top-0 z-50 bg-[#0b0b0b]/95 backdrop-blur border-b border-[#1a1a1a] px-4 sm:px-6 py-3.5">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+            <div class="min-w-0">
+                <h1 class="text-base sm:text-lg font-black text-white leading-tight">Painel de Controle <span class="text-[#00ff66]">BPO</span></h1>
+                <p id="status-conexao" class="text-[11px] text-gray-500 flex items-center mt-0.5"><span class="pulso-status pulso-carregando"></span>Carregando dados…</p>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <a href="index.html" target="_blank" rel="noopener" class="btn-secundario hidden sm:inline-flex">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+                    Ver site
+                </a>
+                <button id="btn-recarregar" class="btn-secundario">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M8 16H3v5"></path></svg>
+                    <span class="hidden sm:inline">Recarregar</span>
+                </button>
+                <button id="btn-salvar" class="btn-primario">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path><path d="M7 3v4a1 1 0 0 0 1 1h7"></path></svg>
+                    Salvar
+                </button>
+            </div>
         </div>
-        <div class="flex items-center gap-2">
-            <button id="btn-recarregar" class="btn-secundario">Recarregar</button>
-            <button id="btn-salvar" class="btn-primario">Salvar alterações</button>
-        </div>
+        <nav id="nav-mobile" class="md:hidden mt-3"></nav>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex gap-8 items-start">
 
-        <!-- HERO -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">Topo da página (Hero)</span><p class="secao-sub">Selo, título, subtítulo e botão principal.</p></div>
-            <div class="card-editor grid gap-3">
-                <div><span class="campo-label">Selo acima do título</span><input class="campo-input" data-campo="hero.badge" /></div>
-                <div class="grid sm:grid-cols-2 gap-3">
-                    <div><span class="campo-label">Título (parte 1)</span><input class="campo-input" data-campo="hero.tituloPre" /></div>
-                    <div><span class="campo-label">Título em destaque (verde)</span><input class="campo-input" data-campo="hero.tituloDestaque" /></div>
-                </div>
-                <div><span class="campo-label">Subtítulo</span><input class="campo-input" data-campo="hero.subtitulo" /></div>
-                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="hero.descricao"></textarea></div>
-                <div><span class="campo-label">Selos (marcadores com ✔ abaixo da descrição)</span></div>
-                <div id="lista-selos" class="grid sm:grid-cols-2 gap-2"></div>
-                <button class="btn-secundario self-start" data-add="hero.selos" data-modelo='"Novo selo"'>+ Adicionar selo</button>
-                <div><span class="campo-label">Texto do botão principal</span><input class="campo-input" data-campo="hero.botaoTexto" /></div>
+        <!-- NAVEGAÇÃO LATERAL (desktop) -->
+        <nav id="nav-desktop" class="hidden md:flex flex-col gap-1 w-56 flex-shrink-0 sticky top-24"></nav>
+
+        <main class="min-w-0 flex-1 flex flex-col gap-10">
+
+            <!-- Como usar -->
+            <div class="rounded-xl border border-[#00ff66]/20 bg-[#0d3b2a]/15 px-4 py-3.5 flex gap-3 items-start">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#00ff66] flex-shrink-0 mt-0.5" style="width:17px;height:17px" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                <p class="text-[12.5px] text-gray-300 leading-relaxed">Os campos abaixo já vêm preenchidos com o conteúdo que está no ar. Edite o que quiser, use <strong class="text-white">+ Adicionar</strong> para criar itens novos, as setinhas <strong class="text-white">↑ ↓</strong> para reordenar, e <strong class="text-white">Remover</strong> para excluir. Nada é publicado até você clicar em <strong class="text-[#00ff66]">Salvar</strong>.</p>
             </div>
-        </section>
 
-        <!-- VÍDEO DE APRESENTAÇÃO -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">Vídeo de apresentação</span><p class="secao-sub">Capa (miniatura) mostrada antes do play. O vídeo tocado é sempre o arquivo "apresentacao.mp4" enviado no GitHub.</p></div>
-            <div class="card-editor grid gap-3">
-                <div>
-                    <span class="campo-label">Imagem de capa do vídeo</span>
-                    <div class="flex items-center gap-4">
-                        <img id="preview-capa-video" src="" alt="Prévia da capa" class="hidden w-32 aspect-video object-cover rounded-lg border border-[#2a2a2a]" />
-                        <div class="flex flex-col gap-2">
-                            <input id="input-capa-video" type="file" accept="image/*" class="text-xs text-gray-400" />
-                            <button id="btn-remover-capa-video" type="button" class="btn-remover self-start">Remover imagem (usar a padrão do repositório)</button>
+            <!-- HERO -->
+            <section id="sec-hero" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="M16 7h6v6"></path><path d="m22 7-8.5 8.5-5-5L2 17"></path></svg></span>
+                    <div><span class="secao-titulo">Topo da página (Hero)</span><p class="secao-sub">O primeiro bloco que o visitante vê: selo, título, subtítulo, descrição, selos de confiança e o botão principal.</p></div>
+                </div>
+                <div class="card-editor grid gap-3">
+                    <div><span class="campo-label">Selo acima do título</span><input class="campo-input" data-campo="hero.badge" placeholder="Ex: MÉTODO INTENSIVO • VAGAS LIMITADAS" /></div>
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <div><span class="campo-label">Título (parte 1, em branco)</span><input class="campo-input" data-campo="hero.tituloPre" placeholder="Ex: APRENDA A OPERAR EM" /></div>
+                        <div><span class="campo-label">Título em destaque (verde)</span><input class="campo-input" data-campo="hero.tituloDestaque" placeholder="Ex: 7 DIAS" /></div>
+                    </div>
+                    <div><span class="campo-label">Subtítulo</span><input class="campo-input" data-campo="hero.subtitulo" placeholder="Ex: Mesmo que você esteja começando do zero absoluto." /></div>
+                    <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="hero.descricao"></textarea></div>
+                    <div><span class="campo-label">Texto do botão principal</span><input class="campo-input" data-campo="hero.botaoTexto" placeholder="Ex: QUERO COMEÇAR AGORA" /></div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <span class="campo-label mb-0">Selos de confiança (linhas com ✔ abaixo da descrição)<span id="contador-selos" class="contador-badge">0</span></span>
+                    </div>
+                    <div id="lista-selos" class="grid sm:grid-cols-2 gap-2"></div>
+                    <button class="btn-secundario self-start" data-add="hero.selos" data-modelo='"Novo selo"'>+ Adicionar selo</button>
+                </div>
+            </section>
+
+            <!-- VÍDEO DE APRESENTAÇÃO -->
+            <section id="sec-video" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path><rect x="2" y="6" width="14" height="12" rx="2"></rect></svg></span>
+                    <div><span class="secao-titulo">Vídeo de apresentação</span><p class="secao-sub">A imagem de capa e o comportamento do player que aparece no topo do site.</p></div>
+                </div>
+                <div class="card-editor grid gap-4">
+                    <div>
+                        <span class="campo-label">Imagem de capa do vídeo</span>
+                        <p class="campo-dica mb-3">Essa imagem preenche o fundo preto do player, atrás do botão de play — é a primeira coisa que o visitante vê. Ela também <strong class="text-gray-300">volta a aparecer automaticamente quando o vídeo termina</strong>, deixando o player pronto para tocar de novo. Recomendado: imagem no formato 16:9 (widescreen).</p>
+                        <div class="flex items-start gap-4">
+                            <div class="destaque-preview w-40 flex-shrink-0">
+                                <img id="preview-capa-video" src="" alt="Prévia da capa" class="hidden" />
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label class="btn-secundario cursor-pointer self-start">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M21.2 15c.7-1.2 1-2.5.7-3.9-.6-2-2.4-3.5-4.4-3.5h-1.2c-.7-3-3.2-5.6-6.4-5.6a6.6 6.6 0 0 0-6.6 6.6c0 1.5.5 2.9 1.4 4"></path><path d="M12 12v9"></path><path d="m16 16-4-4-4 4"></path></svg>
+                                    Enviar nova imagem
+                                    <input id="input-capa-video" type="file" accept="image/*" class="hidden" />
+                                </label>
+                                <button id="btn-remover-capa-video" type="button" class="btn-remover self-start">Remover (voltar para a imagem padrão do repositório)</button>
+                                <p class="campo-dica">A imagem é salva direto no banco de dados (em base64) — não precisa subir nenhum arquivo no GitHub.</p>
+                            </div>
                         </div>
                     </div>
-                    <p class="text-[11px] text-gray-500 mt-2">A imagem é salva direto no banco de dados (em base64), então não precisa subir nenhum arquivo de imagem no GitHub.</p>
+                    <div class="border-t border-[#1f1f1f] pt-4">
+                        <span class="campo-label">Nome do arquivo de vídeo (avançado)</span>
+                        <input class="campo-input" data-campo="hero.videoArquivo" placeholder="apresentacao.mp4" />
+                        <p class="campo-dica">Deixe em branco para usar o padrão <code class="text-gray-400">apresentacao.mp4</code>. Só altere se você subiu o vídeo no GitHub com outro nome de arquivo — nesse caso, digite o nome exatamente igual (incluindo a extensão, ex: <code class="text-gray-400">aula1.mp4</code>).</p>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- STATS -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">Números de prova social</span><p class="secao-sub">A barra de números logo abaixo do topo.</p></div>
-            <div id="lista-stats" class="grid sm:grid-cols-2 gap-3"></div>
-            <button class="btn-secundario self-start" data-add="stats" data-modelo='{"valor":"Novo valor","label":"Nova legenda"}'>+ Adicionar número</button>
-        </section>
-
-        <!-- BENEFITS -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">O que você vai aprender</span><p class="secao-sub">Título da seção e os cards da grade de aprendizado.</p></div>
-            <div class="card-editor grid gap-3">
-                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="benefits.tag" /></div>
-                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="benefits.titulo" /></div>
-                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="benefits.descricao"></textarea></div>
-            </div>
-            <div id="lista-benefits" class="flex flex-col gap-3"></div>
-            <button class="btn-secundario self-start" data-add="benefits.cards" data-modelo='{"titulo":"Novo card","descricao":"Descrição do card"}'>+ Adicionar card</button>
-        </section>
-
-        <!-- PERFIL ALUNO -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">Perfil do aluno ideal</span><p class="secao-sub">Lista de "esse curso é para você que...".</p></div>
-            <div class="card-editor grid gap-3">
-                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="perfilAluno.tag" /></div>
-                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="perfilAluno.titulo" /></div>
-                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="perfilAluno.descricao"></textarea></div>
-            </div>
-            <div id="lista-perfil" class="flex flex-col gap-2"></div>
-            <button class="btn-secundario self-start" data-add="perfilAluno.itens" data-modelo='"Novo item"'>+ Adicionar item</button>
-        </section>
-
-        <!-- INCLUSO -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">O que está incluso no treinamento</span><p class="secao-sub">Lista de itens inclusos (pode marcar como "Destaque").</p></div>
-            <div class="card-editor grid gap-3">
-                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="incluso.tag" /></div>
-                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="incluso.titulo" /></div>
-                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="incluso.descricao"></textarea></div>
-            </div>
-            <div id="lista-incluso" class="flex flex-col gap-2"></div>
-            <button class="btn-secundario self-start" data-add="incluso.itens" data-modelo='{"texto":"Novo item incluso","destaque":false}'>+ Adicionar item</button>
-        </section>
-
-        <!-- DIFFERENTIALS -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">Nossos diferenciais</span><p class="secao-sub">Cards de "Por que escolher o BPO".</p></div>
-            <div class="card-editor grid gap-3">
-                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="differentials.tag" /></div>
-                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="differentials.titulo" /></div>
-                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="differentials.descricao"></textarea></div>
-            </div>
-            <div id="lista-differentials" class="flex flex-col gap-3"></div>
-            <button class="btn-secundario self-start" data-add="differentials.cards" data-modelo='{"titulo":"Novo diferencial","descricao":"Descrição do diferencial"}'>+ Adicionar card</button>
-        </section>
-
-        <!-- WARRANTY -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">Garantia</span><p class="secao-sub">Bloco "Você não tem risco".</p></div>
-            <div class="card-editor grid gap-3">
-                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="warranty.titulo" /></div>
-                <div><span class="campo-label">Texto (aceita &lt;strong&gt;negrito&lt;/strong&gt;)</span><textarea class="campo-textarea" data-campo="warranty.texto"></textarea></div>
-            </div>
-        </section>
-
-        <!-- PRICING -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">Preço e checkout</span><p class="secao-sub">Valores, parcelamento e link de pagamento.</p></div>
-            <div class="card-editor grid gap-3">
-                <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="pricing.tag" /></div>
-                <div><span class="campo-label">Título</span><input class="campo-input" data-campo="pricing.titulo" /></div>
-                <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="pricing.descricao"></textarea></div>
-                <div class="grid sm:grid-cols-2 gap-3">
-                    <div><span class="campo-label">Selo de desconto (ex: 70% OFF)</span><input class="campo-input" data-campo="pricing.desconto" /></div>
-                    <div><span class="campo-label">Preço "de" (riscado)</span><input class="campo-input" data-campo="pricing.precoDe" /></div>
-                    <div><span class="campo-label">Preço "por"</span><input class="campo-input" data-campo="pricing.precoPor" /></div>
-                    <div><span class="campo-label">Texto de parcelamento</span><input class="campo-input" data-campo="pricing.parcelas" /></div>
+            <!-- STATS -->
+            <section id="sec-stats" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg></span>
+                    <div><span class="secao-titulo">Números de prova social<span id="contador-stats" class="contador-badge">0</span></span><p class="secao-sub">A faixa de números logo abaixo do topo (ex: "4.892+ Alunos Formados").</p></div>
                 </div>
-                <div><span class="campo-label">Link de pagamento (Hotmart)</span><input class="campo-input" data-campo="pricing.linkPagamento" /></div>
-                <div><span class="campo-label">Texto do botão de compra</span><input class="campo-input" data-campo="pricing.botaoTexto" /></div>
-            </div>
-        </section>
+                <div id="lista-stats" class="grid sm:grid-cols-2 gap-3"></div>
+                <button class="btn-secundario self-start" data-add="stats" data-modelo='{"valor":"Novo valor","label":"Nova legenda"}'>+ Adicionar número</button>
+            </section>
 
-        <!-- TESTIMONIALS -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">Depoimentos (WhatsApp)</span><p class="secao-sub">Cada depoimento é uma conversa simulada. A primeira mensagem deve ser "recebida"; a resposta, "enviada".</p></div>
-            <div id="lista-testimonials" class="flex flex-col gap-4"></div>
-            <button class="btn-secundario self-start" data-add="testimonials" data-modelo='{"iniciais":"AB","nome":"Novo Aluno","mensagens":[{"tipo":"recebida","texto":"Depoimento do aluno...","hora":"12:00"},{"tipo":"enviada","texto":"Que bom, obrigado!","hora":"12:02"}]}'>+ Adicionar depoimento</button>
-        </section>
+            <!-- BENEFITS -->
+            <section id="sec-benefits" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"></path><path d="M22 10v6"></path><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"></path></svg></span>
+                    <div><span class="secao-titulo">O que você vai aprender<span id="contador-benefits" class="contador-badge">0</span></span><p class="secao-sub">Título da seção e os cards da grade de conteúdo do curso.</p></div>
+                </div>
+                <div class="card-editor grid gap-3">
+                    <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="benefits.tag" /></div>
+                    <div><span class="campo-label">Título</span><input class="campo-input" data-campo="benefits.titulo" /></div>
+                    <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="benefits.descricao"></textarea></div>
+                </div>
+                <div id="lista-benefits" class="flex flex-col gap-3"></div>
+                <button class="btn-secundario self-start" data-add="benefits.cards" data-modelo='{"titulo":"Novo card","descricao":"Descrição do card"}'>+ Adicionar card</button>
+            </section>
 
-        <!-- FAQ -->
-        <section class="flex flex-col gap-4">
-            <div><span class="secao-titulo">Perguntas frequentes</span><p class="secao-sub">Perguntas e respostas do FAQ.</p></div>
-            <div id="lista-faq" class="flex flex-col gap-3"></div>
-            <button class="btn-secundario self-start" data-add="faq" data-modelo='{"pergunta":"Nova pergunta?","resposta":"Resposta da pergunta."}'>+ Adicionar pergunta</button>
-        </section>
+            <!-- PERFIL ALUNO -->
+            <section id="sec-perfil" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline></svg></span>
+                    <div><span class="secao-titulo">Perfil do aluno ideal<span id="contador-perfil" class="contador-badge">0</span></span><p class="secao-sub">Lista de "esse curso é para você que…".</p></div>
+                </div>
+                <div class="card-editor grid gap-3">
+                    <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="perfilAluno.tag" /></div>
+                    <div><span class="campo-label">Título</span><input class="campo-input" data-campo="perfilAluno.titulo" /></div>
+                    <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="perfilAluno.descricao"></textarea></div>
+                </div>
+                <div id="lista-perfil" class="flex flex-col gap-2"></div>
+                <button class="btn-secundario self-start" data-add="perfilAluno.itens" data-modelo='"Novo item"'>+ Adicionar item</button>
+            </section>
 
-    </main>
+            <!-- INCLUSO -->
+            <section id="sec-incluso" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg></span>
+                    <div><span class="secao-titulo">O que está incluso no treinamento<span id="contador-incluso" class="contador-badge">0</span></span><p class="secao-sub">Lista de itens inclusos. Marque "Destaque" para dar mais peso visual ao item.</p></div>
+                </div>
+                <div class="card-editor grid gap-3">
+                    <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="incluso.tag" /></div>
+                    <div><span class="campo-label">Título</span><input class="campo-input" data-campo="incluso.titulo" /></div>
+                    <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="incluso.descricao"></textarea></div>
+                </div>
+                <div id="lista-incluso" class="flex flex-col gap-2"></div>
+                <button class="btn-secundario self-start" data-add="incluso.itens" data-modelo='{"texto":"Novo item incluso","destaque":false}'>+ Adicionar item</button>
+            </section>
 
-    <div class="fixed bottom-0 left-0 right-0 bg-[#0b0b0b]/95 backdrop-blur border-t border-[#1a1a1a] px-4 sm:px-6 py-4 flex items-center justify-between gap-3 z-40">
-        <p id="mensagem-salvar" class="text-xs text-gray-500"></p>
-        <button id="btn-salvar-rodape" class="btn-primario">Salvar alterações</button>
+            <!-- DIFFERENTIALS -->
+            <section id="sec-differentials" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path><circle cx="12" cy="8" r="6"></circle></svg></span>
+                    <div><span class="secao-titulo">Nossos diferenciais<span id="contador-differentials" class="contador-badge">0</span></span><p class="secao-sub">Cards de "Por que escolher o Método BPO".</p></div>
+                </div>
+                <div class="card-editor grid gap-3">
+                    <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="differentials.tag" /></div>
+                    <div><span class="campo-label">Título</span><input class="campo-input" data-campo="differentials.titulo" /></div>
+                    <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="differentials.descricao"></textarea></div>
+                </div>
+                <div id="lista-differentials" class="flex flex-col gap-3"></div>
+                <button class="btn-secundario self-start" data-add="differentials.cards" data-modelo='{"titulo":"Novo diferencial","descricao":"Descrição do diferencial"}'>+ Adicionar card</button>
+            </section>
+
+            <!-- WARRANTY -->
+            <section id="sec-warranty" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg></span>
+                    <div><span class="secao-titulo">Garantia</span><p class="secao-sub">Bloco "Você não tem risco nenhum".</p></div>
+                </div>
+                <div class="card-editor grid gap-3">
+                    <div><span class="campo-label">Título</span><input class="campo-input" data-campo="warranty.titulo" /></div>
+                    <div><span class="campo-label">Texto</span><textarea class="campo-textarea" data-campo="warranty.texto"></textarea><p class="campo-dica">Aceita <code class="text-gray-400">&lt;strong&gt;negrito&lt;/strong&gt;</code> para destacar palavras.</p></div>
+                </div>
+            </section>
+
+            <!-- PRICING -->
+            <section id="sec-pricing" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg></span>
+                    <div><span class="secao-titulo">Preço e checkout</span><p class="secao-sub">Valores, parcelamento e o link de pagamento da Hotmart.</p></div>
+                </div>
+                <div class="card-editor grid gap-3">
+                    <div><span class="campo-label">Tag</span><input class="campo-input" data-campo="pricing.tag" /></div>
+                    <div><span class="campo-label">Título</span><input class="campo-input" data-campo="pricing.titulo" /></div>
+                    <div><span class="campo-label">Descrição</span><textarea class="campo-textarea" data-campo="pricing.descricao"></textarea></div>
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <div><span class="campo-label">Selo de desconto</span><input class="campo-input" data-campo="pricing.desconto" placeholder="Ex: 70% OFF" /></div>
+                        <div><span class="campo-label">Preço "de" (riscado)</span><input class="campo-input" data-campo="pricing.precoDe" placeholder="Ex: R$ 497,00" /></div>
+                        <div><span class="campo-label">Preço "por"</span><input class="campo-input" data-campo="pricing.precoPor" placeholder="Ex: R$ 147,00" /></div>
+                        <div><span class="campo-label">Texto de parcelamento</span><input class="campo-input" data-campo="pricing.parcelas" placeholder="Ex: Ou em até 12x de R$ 14,67" /></div>
+                    </div>
+                    <div><span class="campo-label">Link de pagamento (Hotmart)</span><input class="campo-input" data-campo="pricing.linkPagamento" placeholder="https://pay.hotmart.com/..." /></div>
+                    <div><span class="campo-label">Texto do botão de compra</span><input class="campo-input" data-campo="pricing.botaoTexto" /></div>
+                </div>
+            </section>
+
+            <!-- TESTIMONIALS -->
+            <section id="sec-testimonials" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path></svg></span>
+                    <div><span class="secao-titulo">Depoimentos (WhatsApp)<span id="contador-testimonials" class="contador-badge">0</span></span><p class="secao-sub">Cada depoimento é uma conversa simulada. A 1ª mensagem geralmente é "Recebida" (do aluno) e a resposta é "Enviada" (do professor). Eles aparecem em carrossel automático no site.</p></div>
+                </div>
+                <div id="lista-testimonials" class="flex flex-col gap-4"></div>
+                <button class="btn-secundario self-start" data-add="testimonials" data-modelo='{"iniciais":"AB","nome":"Novo Aluno","mensagens":[{"tipo":"recebida","texto":"Depoimento do aluno...","hora":"12:00"},{"tipo":"enviada","texto":"Que bom, obrigado!","hora":"12:02"}]}'>+ Adicionar depoimento</button>
+            </section>
+
+            <!-- FAQ -->
+            <section id="sec-faq" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></span>
+                    <div><span class="secao-titulo">Perguntas frequentes<span id="contador-faq" class="contador-badge">0</span></span><p class="secao-sub">Perguntas e respostas exibidas no FAQ, no formato de sanfona (clique para abrir/fechar).</p></div>
+                </div>
+                <div id="lista-faq" class="flex flex-col gap-3"></div>
+                <button class="btn-secundario self-start" data-add="faq" data-modelo='{"pergunta":"Nova pergunta?","resposta":"Resposta da pergunta."}'>+ Adicionar pergunta</button>
+            </section>
+
+        </main>
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-[#0b0b0b]/95 backdrop-blur border-t border-[#1a1a1a] px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3 z-40">
+        <p class="text-xs text-gray-500 hidden sm:block">As alterações só valem para o site depois de salvas.</p>
+        <button id="btn-salvar-rodape" class="btn-primario ml-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path><path d="M7 3v4a1 1 0 0 0 1 1h7"></path></svg>
+            Salvar alterações
+        </button>
+    </div>
+
+    <!-- ===================================================================
+         POP-UP DE SALVAMENTO
+         Aparece assim que "Salvar" é clicado: mostra um carregamento girando
+         enquanto grava no banco, depois vira um ✓ verde (ou um ✕ vermelho se
+         der erro). Só pode ser fechado depois que o resultado aparece.
+         =================================================================== -->
+    <div id="modal-salvar" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-5">
+        <div id="modal-salvar-backdrop" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+        <div class="relative bg-[#131313] border border-[#262626] rounded-2xl w-full max-w-xs p-7 flex flex-col items-center text-center gap-1 shadow-2xl">
+            <div id="modal-salvar-icone" class="w-16 h-16 rounded-full flex items-center justify-center mb-2"></div>
+            <p id="modal-salvar-titulo" class="text-white font-black text-[15px]"></p>
+            <p id="modal-salvar-texto" class="text-gray-400 text-[12.5px] leading-relaxed"></p>
+            <button id="modal-salvar-fechar" class="btn-secundario text-xs px-6 py-2 mt-4">Fechar</button>
+        </div>
     </div>
 </div>
 
 <script type="module">
 import { conteudoPadrao, buscarConteudo, salvarConteudo, ouvirConteudo } from './dados.js';
 
-let dados = null; // conteúdo atual em edição (objeto JS)
+let dados = null;      // conteúdo atual em edição (objeto JS)
+let sujo = false;       // true quando há alterações ainda não salvas
+let salvando = false;
+
+// ---------- Navegação (sidebar desktop + pílulas mobile) ----------
+const SECOES = [
+    { id: 'sec-hero', label: 'Topo (Hero)', icone: '<path d="M16 7h6v6"></path><path d="m22 7-8.5 8.5-5-5L2 17"></path>' },
+    { id: 'sec-video', label: 'Vídeo', icone: '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path><rect x="2" y="6" width="14" height="12" rx="2"></rect>' },
+    { id: 'sec-stats', label: 'Números', icone: '<path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path>' },
+    { id: 'sec-benefits', label: 'Aprendizado', icone: '<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"></path><path d="M22 10v6"></path><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"></path>' },
+    { id: 'sec-perfil', label: 'Perfil do aluno', icone: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><polyline points="16 11 18 13 22 9"></polyline>' },
+    { id: 'sec-incluso', label: 'Incluso', icone: '<circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path>' },
+    { id: 'sec-differentials', label: 'Diferenciais', icone: '<path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path><circle cx="12" cy="8" r="6"></circle>' },
+    { id: 'sec-warranty', label: 'Garantia', icone: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path>' },
+    { id: 'sec-pricing', label: 'Preço', icone: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle>' },
+    { id: 'sec-testimonials', label: 'Depoimentos', icone: '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path>' },
+    { id: 'sec-faq', label: 'FAQ', icone: '<circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path>' }
+];
+
+function montarNavegacao() {
+    const desktop = document.getElementById('nav-desktop');
+    const mobile = document.getElementById('nav-mobile');
+    desktop.innerHTML = SECOES.map(s =>
+        `<a href="#${s.id}" data-alvo="${s.id}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${s.icone}</svg>${s.label}</a>`
+    ).join('');
+    mobile.innerHTML = SECOES.map(s => `<a href="#${s.id}" data-alvo="${s.id}">${s.label}</a>`).join('');
+
+    const links = document.querySelectorAll('[data-alvo]');
+    const observador = new IntersectionObserver((entradas) => {
+        entradas.forEach((entrada) => {
+            if (!entrada.isIntersecting) return;
+            const id = entrada.target.id;
+            links.forEach((link) => link.classList.toggle('ativo', link.dataset.alvo === id));
+        });
+    }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+    SECOES.forEach((s) => {
+        const el = document.getElementById(s.id);
+        if (el) observador.observe(el);
+    });
+}
+montarNavegacao();
 
 // ---------- Utilitários de caminho (ex.: "hero.selos.0") ----------
 function getEmCaminho(obj, caminho) {
@@ -214,44 +412,86 @@ function setEmCaminho(obj, caminho, valor) {
     atual[partes[partes.length - 1]] = valor;
 }
 
+// ---------- Indicador de "alterações não salvas" ----------
+function marcarSujo() {
+    if (salvando) return;
+    sujo = true;
+    const statusEl = document.getElementById('status-conexao');
+    statusEl.innerHTML = '<span class="pulso-status pulso-alerta"></span>Alterações não salvas — clique em "Salvar" para publicar.';
+}
+function marcarLimpo(texto) {
+    sujo = false;
+    document.getElementById('status-conexao').innerHTML = `<span class="pulso-status pulso-ok"></span>${texto}`;
+}
+window.addEventListener('beforeunload', (e) => {
+    if (!sujo) return;
+    e.preventDefault();
+    e.returnValue = '';
+});
+
 // ---------- Carregamento inicial + escuta em tempo real ----------
 let painelIniciado = false;
 function iniciarPainel() {
     if (painelIniciado) return;
     painelIniciado = true;
     const statusEl = document.getElementById('status-conexao');
-    ouvirConteudo((novoConteudo) => {
-        // Só sobrescreve os campos em edição na primeira carga, para não
-        // atrapalhar quem está digitando caso outra pessoa edite ao mesmo tempo.
+
+    // Trava de segurança: se o banco de dados demorar demais (ou não
+    // responder), o painel libera a edição mesmo assim depois de 6s, com
+    // uma cópia local padrão — assim ele nunca fica preso em "Carregando…"
+    // para sempre (o que também impedia o upload de imagem de funcionar).
+    const timeoutCarga = setTimeout(() => {
         if (!dados) {
-            dados = novoConteudo || JSON.parse(JSON.stringify(conteudoPadrao));
+            dados = JSON.parse(JSON.stringify(conteudoPadrao));
             preencherFormulario();
-            statusEl.textContent = 'Conectado ao Firebase — pronto para editar.';
-        } else {
-            statusEl.textContent = 'Conectado ao Firebase (há uma versão mais nova salva — clique em "Recarregar" para atualizar a tela).';
+            statusEl.innerHTML = '<span class="pulso-status pulso-alerta"></span>Não conectou ao banco de dados a tempo — editando uma cópia local. Toque em "Recarregar" antes de editar, se possível.';
         }
-    });
+    }, 6000);
+
+    try {
+        ouvirConteudo((novoConteudo) => {
+            clearTimeout(timeoutCarga);
+            // Só sobrescreve os campos em edição na primeira carga, para não
+            // atrapalhar quem está digitando caso outra pessoa edite ao mesmo tempo.
+            if (!dados) {
+                dados = novoConteudo || JSON.parse(JSON.stringify(conteudoPadrao));
+                preencherFormulario();
+                marcarLimpo('Conectado — pronto para editar.');
+            } else if (!sujo) {
+                statusEl.innerHTML = '<span class="pulso-status pulso-alerta"></span>Há uma versão mais nova salva — clique em "Recarregar" para atualizar a tela.';
+            }
+        });
+    } catch (erro) {
+        console.error(erro);
+        clearTimeout(timeoutCarga);
+        if (!dados) {
+            dados = JSON.parse(JSON.stringify(conteudoPadrao));
+            preencherFormulario();
+        }
+        statusEl.innerHTML = '<span class="pulso-status pulso-alerta"></span>Erro ao conectar ao banco de dados. Editando uma cópia local — toque em "Recarregar" para tentar de novo.';
+    }
 }
 
 document.getElementById('btn-recarregar').addEventListener('click', async () => {
+    if (sujo && !confirm('Você tem alterações não salvas. Recarregar agora vai descartá-las. Deseja continuar?')) return;
     dados = await buscarConteudo();
     preencherFormulario();
-    document.getElementById('status-conexao').textContent = 'Dados recarregados.';
+    marcarLimpo('Dados recarregados.');
 });
 
-// ---------- Preenche todos os campos simples (inputs com data-campo) ----------
+// ---------- Preenche todos os campos e listas ----------
 function preencherFormulario() {
     document.querySelectorAll('[data-campo]').forEach((el) => {
         const valor = getEmCaminho(dados, el.dataset.campo);
         el.value = valor == null ? '' : valor;
     });
     atualizarPreviewCapaVideo();
-    renderizarListaSimples('hero.selos', 'lista-selos');
+    renderizarListaSimples('hero.selos', 'lista-selos', 'contador-selos');
     renderizarListaStats();
     renderizarListaBenefits();
-    renderizarListaSimples('perfilAluno.itens', 'lista-perfil');
+    renderizarListaSimples('perfilAluno.itens', 'lista-perfil', 'contador-perfil');
     renderizarListaIncluso();
-    renderizarListaBenefitsGenerico('differentials.cards', 'lista-differentials', 'diferencial');
+    renderizarListaBenefitsGenerico('differentials.cards', 'lista-differentials', 'diferencial', 'contador-differentials');
     renderizarListaTestimonials();
     renderizarListaFaq();
 }
@@ -268,28 +508,58 @@ function atualizarPreviewCapaVideo() {
     }
 }
 
-// ---------- Upload da capa do vídeo (convertida para base64) ----------
+// ---------- Upload da capa do vídeo (convertida para base64, salva como texto no banco) ----------
 document.getElementById('input-capa-video').addEventListener('change', (e) => {
     const arquivo = e.target.files && e.target.files[0];
-    if (!arquivo || !dados) return;
+    if (!arquivo) return;
+
+    // Se os dados ainda não chegaram do banco por algum motivo, cria uma
+    // cópia local agora — assim o upload NUNCA falha silenciosamente.
+    if (!dados) {
+        dados = JSON.parse(JSON.stringify(conteudoPadrao));
+        preencherFormulario();
+    }
+
+    if (!arquivo.type || !arquivo.type.startsWith('image/')) {
+        alert('Escolha um arquivo de imagem (JPG, PNG, WEBP...).');
+        e.target.value = '';
+        return;
+    }
+
+    // O banco de dados tem um limite de ~1 MB por registro (somando todos
+    // os campos). Como a imagem em texto (base64) fica ~33% maior que o
+    // arquivo original, avisamos antes de imagens grandes demais.
+    const LIMITE_AVISO = 700 * 1024;
+    if (arquivo.size > LIMITE_AVISO) {
+        const tamanhoMb = (arquivo.size / 1024 / 1024).toFixed(1);
+        const prosseguir = confirm('Essa imagem tem ' + tamanhoMb + ' MB — é bem grande e pode não caber no banco de dados (o limite é de cerca de 1 MB somando tudo). O ideal é usar uma imagem comprimida, algo em torno de 200–500 KB. Deseja usá-la mesmo assim?');
+        if (!prosseguir) { e.target.value = ''; return; }
+    }
+
     const leitor = new FileReader();
     leitor.onload = () => {
-        setEmCaminho(dados, 'hero.capaVideo', leitor.result); // já vem como data:image/...;base64,...
+        setEmCaminho(dados, 'hero.capaVideo', leitor.result); // salva como texto: "data:image/...;base64,...."
         atualizarPreviewCapaVideo();
+        marcarSujo();
     };
+    leitor.onerror = () => { alert('Não foi possível ler essa imagem. Tente outro arquivo.'); };
     leitor.readAsDataURL(arquivo);
 });
 document.getElementById('btn-remover-capa-video').addEventListener('click', () => {
     if (!dados) return;
+    if (!dados.hero || !dados.hero.capaVideo) return;
+    if (!confirm('Remover a imagem de capa e voltar para a padrão do repositório?')) return;
     setEmCaminho(dados, 'hero.capaVideo', '');
     document.getElementById('input-capa-video').value = '';
     atualizarPreviewCapaVideo();
+    marcarSujo();
 });
 
 // Grava no objeto `dados` toda vez que um campo simples é alterado
 document.addEventListener('input', (e) => {
     if (e.target.matches('[data-campo]') && dados) {
         setEmCaminho(dados, e.target.dataset.campo, e.target.value);
+        marcarSujo();
     }
 });
 
@@ -302,93 +572,135 @@ document.querySelectorAll('[data-add]').forEach((btn) => {
         lista.push(JSON.parse(JSON.stringify(modelo)));
         setEmCaminho(dados, caminho, lista);
         preencherFormulario();
+        marcarSujo();
+        // rola até o item recém-criado, no fim da lista
+        requestAnimationFrame(() => {
+            const container = btn.previousElementSibling;
+            if (container && container.lastElementChild) {
+                container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
     });
 });
 
-// ---------- Listas de cards genéricos (título + descrição) ----------
-function renderizarListaBenefits() { renderizarListaBenefitsGenerico('benefits.cards', 'lista-benefits', 'card'); }
-
-function renderizarListaBenefitsGenerico(caminho, idContainer, rotulo) {
-    const wrap = document.getElementById(idContainer);
-    wrap.innerHTML = '';
-    const lista = getEmCaminho(dados, caminho) || [];
-    lista.forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className = 'card-editor grid gap-2';
-        div.innerHTML = `
-            <div class="flex items-center justify-between">
-                <span class="campo-label mb-0">${rotulo} ${i + 1}</span>
-                <button class="btn-remover" data-remover="${caminho}.${i}">Remover</button>
+// ---------- Cabeçalho comum de cada item de lista (número + mover + remover) ----------
+function cabecalhoItem(rotulo, indice, total, caminhoItem, caminhoLista) {
+    return `
+        <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span class="numero-item">${indice + 1}</span>
+                <span class="text-xs font-bold text-gray-400">${rotulo}</span>
             </div>
-            <input class="campo-input" data-campo="${caminho}.${i}.titulo" placeholder="Título" />
-            <textarea class="campo-textarea" data-campo="${caminho}.${i}.descricao" placeholder="Descrição"></textarea>
-        `;
-        wrap.appendChild(div);
-    });
-    aplicarValoresNoContainer(wrap);
-    ativarBotoesRemover(wrap, caminho);
+            <div class="flex items-center gap-1.5">
+                <button type="button" class="btn-icone" data-mover="${caminhoLista}" data-indice="${indice}" data-direcao="-1" ${indice === 0 ? 'disabled' : ''} title="Mover para cima">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="m18 15-6-6-6 6"></path></svg>
+                </button>
+                <button type="button" class="btn-icone" data-mover="${caminhoLista}" data-indice="${indice}" data-direcao="1" ${indice === total - 1 ? 'disabled' : ''} title="Mover para baixo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+                </button>
+                <button type="button" class="btn-remover" data-remover="${caminhoItem}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    Remover
+                </button>
+            </div>
+        </div>`;
 }
 
-// ---------- Lista simples de strings (perfil do aluno) ----------
-function renderizarListaSimples(caminho, idContainer) {
+function estadoVazio(mensagem) {
+    return `<div class="estado-vazio">${mensagem}</div>`;
+}
+
+// ---------- Lista de cards genéricos (título + descrição) ----------
+function renderizarListaBenefits() { renderizarListaBenefitsGenerico('benefits.cards', 'lista-benefits', 'Card', 'contador-benefits'); }
+
+function renderizarListaBenefitsGenerico(caminho, idContainer, rotulo, idContador) {
     const wrap = document.getElementById(idContainer);
-    wrap.innerHTML = '';
     const lista = getEmCaminho(dados, caminho) || [];
-    lista.forEach((_, i) => {
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-2';
-        div.innerHTML = `
-            <input class="campo-input" data-campo="${caminho}.${i}" />
-            <button class="btn-remover flex-shrink-0" data-remover="${caminho}.${i}">Remover</button>
-        `;
-        wrap.appendChild(div);
-    });
+    atualizarContador(idContador, lista.length);
+    if (!lista.length) { wrap.innerHTML = estadoVazio('Nenhum card ainda. Use "+ Adicionar card" abaixo para criar o primeiro.'); return; }
+    wrap.innerHTML = lista.map((item, i) => `
+        <div class="card-item grid gap-2.5">
+            ${cabecalhoItem(rotulo + ' ' + (i + 1), i, lista.length, `${caminho}.${i}`, caminho)}
+            <input class="campo-input" data-campo="${caminho}.${i}.titulo" placeholder="Título" />
+            <textarea class="campo-textarea" data-campo="${caminho}.${i}.descricao" placeholder="Descrição"></textarea>
+        </div>`).join('');
     aplicarValoresNoContainer(wrap);
-    ativarBotoesRemover(wrap, caminho);
+    ativarBotoesRemover(wrap);
+    ativarBotoesMover(wrap);
+}
+
+// ---------- Lista simples de strings ----------
+function renderizarListaSimples(caminho, idContainer, idContador) {
+    const wrap = document.getElementById(idContainer);
+    const lista = getEmCaminho(dados, caminho) || [];
+    if (idContador) atualizarContador(idContador, lista.length);
+    if (!lista.length) { wrap.innerHTML = estadoVazio('Nenhum item ainda.'); return; }
+    wrap.innerHTML = lista.map((_, i) => `
+        <div class="flex items-center gap-1.5">
+            <span class="numero-item flex-shrink-0">${i + 1}</span>
+            <input class="campo-input" data-campo="${caminho}.${i}" />
+            <button type="button" class="btn-icone" data-mover="${caminho}" data-indice="${i}" data-direcao="-1" ${i === 0 ? 'disabled' : ''} title="Mover para cima">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="m18 15-6-6-6 6"></path></svg>
+            </button>
+            <button type="button" class="btn-icone" data-mover="${caminho}" data-indice="${i}" data-direcao="1" ${i === lista.length - 1 ? 'disabled' : ''} title="Mover para baixo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <button type="button" class="btn-icone" data-remover="${caminho}.${i}" title="Remover">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            </button>
+        </div>`).join('');
+    aplicarValoresNoContainer(wrap);
+    ativarBotoesRemover(wrap);
+    ativarBotoesMover(wrap);
 }
 
 // ---------- Lista de números de prova social (valor + legenda) ----------
 function renderizarListaStats() {
     const caminho = 'stats';
     const wrap = document.getElementById('lista-stats');
-    wrap.innerHTML = '';
     const lista = getEmCaminho(dados, caminho) || [];
-    lista.forEach((_, i) => {
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-2';
-        div.innerHTML = `
+    atualizarContador('contador-stats', lista.length);
+    if (!lista.length) { wrap.innerHTML = estadoVazio('Nenhum número ainda.'); return; }
+    wrap.innerHTML = lista.map((_, i) => `
+        <div class="card-item grid gap-2">
+            ${cabecalhoItem('Número ' + (i + 1), i, lista.length, `${caminho}.${i}`, caminho)}
             <input class="campo-input" data-campo="${caminho}.${i}.valor" placeholder="Valor (ex: 4.892+)" />
             <input class="campo-input" data-campo="${caminho}.${i}.label" placeholder="Legenda (ex: Alunos Formados)" />
-            <button class="btn-remover flex-shrink-0" data-remover="${caminho}.${i}">Remover</button>
-        `;
-        wrap.appendChild(div);
-    });
+        </div>`).join('');
     aplicarValoresNoContainer(wrap);
-    ativarBotoesRemover(wrap, caminho);
+    ativarBotoesRemover(wrap);
+    ativarBotoesMover(wrap);
 }
 
 // ---------- Lista "incluso" (texto + destaque) ----------
 function renderizarListaIncluso() {
     const caminho = 'incluso.itens';
     const wrap = document.getElementById('lista-incluso');
-    wrap.innerHTML = '';
     const lista = getEmCaminho(dados, caminho) || [];
-    lista.forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-2';
-        div.innerHTML = `
+    atualizarContador('contador-incluso', lista.length);
+    if (!lista.length) { wrap.innerHTML = estadoVazio('Nenhum item incluso ainda.'); return; }
+    wrap.innerHTML = lista.map((item, i) => `
+        <div class="flex items-center gap-1.5">
+            <span class="numero-item flex-shrink-0">${i + 1}</span>
             <input class="campo-input" data-campo="${caminho}.${i}.texto" placeholder="Texto do item" />
-            <label class="flex items-center gap-1.5 text-xs text-gray-400 flex-shrink-0">
+            <label class="flex items-center gap-1.5 text-xs text-gray-400 flex-shrink-0 px-1">
                 <input type="checkbox" data-destaque="${caminho}.${i}.destaque" ${item.destaque ? 'checked' : ''} /> Destaque
             </label>
-            <button class="btn-remover flex-shrink-0" data-remover="${caminho}.${i}">Remover</button>
-        `;
-        wrap.appendChild(div);
-    });
+            <button type="button" class="btn-icone" data-mover="${caminho}" data-indice="${i}" data-direcao="-1" ${i === 0 ? 'disabled' : ''} title="Mover para cima">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="m18 15-6-6-6 6"></path></svg>
+            </button>
+            <button type="button" class="btn-icone" data-mover="${caminho}" data-indice="${i}" data-direcao="1" ${i === lista.length - 1 ? 'disabled' : ''} title="Mover para baixo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+            </button>
+            <button type="button" class="btn-icone" data-remover="${caminho}.${i}" title="Remover">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            </button>
+        </div>`).join('');
     aplicarValoresNoContainer(wrap);
-    ativarBotoesRemover(wrap, caminho);
+    ativarBotoesRemover(wrap);
+    ativarBotoesMover(wrap);
     wrap.querySelectorAll('[data-destaque]').forEach((chk) => {
-        chk.addEventListener('change', () => setEmCaminho(dados, chk.dataset.destaque, chk.checked));
+        chk.addEventListener('change', () => { setEmCaminho(dados, chk.dataset.destaque, chk.checked); marcarSujo(); });
     });
 }
 
@@ -396,40 +708,38 @@ function renderizarListaIncluso() {
 function renderizarListaTestimonials() {
     const caminho = 'testimonials';
     const wrap = document.getElementById('lista-testimonials');
-    wrap.innerHTML = '';
     const lista = getEmCaminho(dados, caminho) || [];
-    lista.forEach((dep, i) => {
-        const div = document.createElement('div');
-        div.className = 'card-editor grid gap-2';
-        let msgsHtml = '';
-        (dep.mensagens || []).forEach((_, j) => {
-            msgsHtml += `
-                <div class="grid grid-cols-[110px_1fr_70px_auto] gap-2 items-center">
-                    <select class="campo-input" data-campo="${caminho}.${i}.mensagens.${j}.tipo">
-                        <option value="recebida">Recebida</option>
-                        <option value="enviada">Enviada</option>
-                    </select>
-                    <input class="campo-input" data-campo="${caminho}.${i}.mensagens.${j}.texto" placeholder="Mensagem" />
-                    <input class="campo-input" data-campo="${caminho}.${i}.mensagens.${j}.hora" placeholder="Hora" />
-                    <button class="btn-remover" data-remover="${caminho}.${i}.mensagens.${j}">Remover</button>
-                </div>`;
-        });
-        div.innerHTML = `
-            <div class="flex items-center justify-between">
-                <span class="campo-label mb-0">Depoimento ${i + 1}</span>
-                <button class="btn-remover" data-remover="${caminho}.${i}">Remover depoimento</button>
-            </div>
+    atualizarContador('contador-testimonials', lista.length);
+    if (!lista.length) { wrap.innerHTML = estadoVazio('Nenhum depoimento ainda. Use "+ Adicionar depoimento" abaixo.'); return; }
+    wrap.innerHTML = lista.map((dep, i) => {
+        const msgs = dep.mensagens || [];
+        let msgsHtml = msgs.map((_, j) => `
+            <div class="grid grid-cols-[100px_1fr_64px_auto] gap-1.5 items-center">
+                <select class="campo-input" data-campo="${caminho}.${i}.mensagens.${j}.tipo" style="padding:8px 6px;font-size:12.5px">
+                    <option value="recebida">Recebida</option>
+                    <option value="enviada">Enviada</option>
+                </select>
+                <input class="campo-input" data-campo="${caminho}.${i}.mensagens.${j}.texto" placeholder="Mensagem" />
+                <input class="campo-input" data-campo="${caminho}.${i}.mensagens.${j}.hora" placeholder="Hora" style="padding:8px 6px" />
+                <button type="button" class="btn-icone" data-remover="${caminho}.${i}.mensagens.${j}" title="Remover mensagem">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                </button>
+            </div>`).join('');
+        if (!msgs.length) msgsHtml = '<p class="text-[11px] text-gray-600 italic">Nenhuma mensagem nesta conversa ainda.</p>';
+        return `
+        <div class="card-item grid gap-3">
+            ${cabecalhoItem('Depoimento — ' + (dep.nome || 'sem nome'), i, lista.length, `${caminho}.${i}`, caminho)}
             <div class="grid grid-cols-[80px_1fr] gap-2">
                 <input class="campo-input" data-campo="${caminho}.${i}.iniciais" placeholder="Iniciais" maxlength="2" />
                 <input class="campo-input" data-campo="${caminho}.${i}.nome" placeholder="Nome do aluno" />
             </div>
-            <div class="flex flex-col gap-2 mt-1">${msgsHtml}</div>
-            <button class="btn-secundario self-start text-xs" data-add-msg="${caminho}.${i}.mensagens">+ Adicionar mensagem</button>
-        `;
-        wrap.appendChild(div);
-    });
+            <div class="flex flex-col gap-1.5">${msgsHtml}</div>
+            <button type="button" class="btn-secundario self-start text-xs" data-add-msg="${caminho}.${i}.mensagens">+ Adicionar mensagem</button>
+        </div>`;
+    }).join('');
     aplicarValoresNoContainer(wrap);
-    ativarBotoesRemover(wrap, caminho);
+    ativarBotoesRemover(wrap);
+    ativarBotoesMover(wrap);
     wrap.querySelectorAll('[data-add-msg]').forEach((btn) => {
         btn.addEventListener('click', () => {
             const cam = btn.dataset.addMsg;
@@ -437,6 +747,7 @@ function renderizarListaTestimonials() {
             lista2.push({ tipo: 'recebida', texto: 'Nova mensagem...', hora: '12:00' });
             setEmCaminho(dados, cam, lista2);
             renderizarListaTestimonials();
+            marcarSujo();
         });
     });
 }
@@ -445,26 +756,26 @@ function renderizarListaTestimonials() {
 function renderizarListaFaq() {
     const caminho = 'faq';
     const wrap = document.getElementById('lista-faq');
-    wrap.innerHTML = '';
     const lista = getEmCaminho(dados, caminho) || [];
-    lista.forEach((_, i) => {
-        const div = document.createElement('div');
-        div.className = 'card-editor grid gap-2';
-        div.innerHTML = `
-            <div class="flex items-center justify-between">
-                <span class="campo-label mb-0">Pergunta ${i + 1}</span>
-                <button class="btn-remover" data-remover="${caminho}.${i}">Remover</button>
-            </div>
+    atualizarContador('contador-faq', lista.length);
+    if (!lista.length) { wrap.innerHTML = estadoVazio('Nenhuma pergunta ainda.'); return; }
+    wrap.innerHTML = lista.map((_, i) => `
+        <div class="card-item grid gap-2.5">
+            ${cabecalhoItem('Pergunta ' + (i + 1), i, lista.length, `${caminho}.${i}`, caminho)}
             <input class="campo-input" data-campo="${caminho}.${i}.pergunta" placeholder="Pergunta" />
             <textarea class="campo-textarea" data-campo="${caminho}.${i}.resposta" placeholder="Resposta"></textarea>
-        `;
-        wrap.appendChild(div);
-    });
+        </div>`).join('');
     aplicarValoresNoContainer(wrap);
-    ativarBotoesRemover(wrap, caminho);
+    ativarBotoesRemover(wrap);
+    ativarBotoesMover(wrap);
 }
 
 // ---------- Auxiliares ----------
+function atualizarContador(idContador, quantidade) {
+    const el = document.getElementById(idContador);
+    if (el) el.textContent = quantidade;
+}
+
 function aplicarValoresNoContainer(wrap) {
     wrap.querySelectorAll('[data-campo]').forEach((el) => {
         const valor = getEmCaminho(dados, el.dataset.campo);
@@ -472,9 +783,10 @@ function aplicarValoresNoContainer(wrap) {
     });
 }
 
-function ativarBotoesRemover(wrap, caminhoBase) {
+function ativarBotoesRemover(wrap) {
     wrap.querySelectorAll('[data-remover]').forEach((btn) => {
         btn.addEventListener('click', () => {
+            if (!confirm('Remover este item? Essa ação não pode ser desfeita (só depois de salvar).')) return;
             const caminho = btn.dataset.remover;
             const partes = caminho.split('.');
             const indice = parseInt(partes.pop(), 10);
@@ -485,21 +797,100 @@ function ativarBotoesRemover(wrap, caminhoBase) {
                 setEmCaminho(dados, caminhoLista, lista);
             }
             preencherFormulario();
+            marcarSujo();
         });
     });
 }
 
+function ativarBotoesMover(wrap) {
+    wrap.querySelectorAll('[data-mover]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const caminhoLista = btn.dataset.mover;
+            const indice = parseInt(btn.dataset.indice, 10);
+            const direcao = parseInt(btn.dataset.direcao, 10);
+            const lista = getEmCaminho(dados, caminhoLista);
+            const novoIndice = indice + direcao;
+            if (!Array.isArray(lista) || novoIndice < 0 || novoIndice >= lista.length) return;
+            const temp = lista[indice];
+            lista[indice] = lista[novoIndice];
+            lista[novoIndice] = temp;
+            setEmCaminho(dados, caminhoLista, lista);
+            preencherFormulario();
+            marcarSujo();
+        });
+    });
+}
+
+// ---------- Pop-up de salvamento (carregando -> sucesso/erro) ----------
+const modalSalvarEl = document.getElementById('modal-salvar');
+const modalSalvarIcone = document.getElementById('modal-salvar-icone');
+const modalSalvarTitulo = document.getElementById('modal-salvar-titulo');
+const modalSalvarTexto = document.getElementById('modal-salvar-texto');
+const modalSalvarFechar = document.getElementById('modal-salvar-fechar');
+const modalSalvarBackdrop = document.getElementById('modal-salvar-backdrop');
+let autoFecharModal = null;
+
+const ICONE_SPINNER = '<svg class="girando" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9"></path></svg>';
+const ICONE_SUCESSO = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0b0b0b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
+const ICONE_ERRO = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>';
+
+function travarFechamentoModal(travar) {
+    modalSalvarFechar.disabled = travar;
+    modalSalvarFechar.classList.toggle('opacity-40', travar);
+    modalSalvarFechar.classList.toggle('pointer-events-none', travar);
+}
+
+function abrirModalSalvar() {
+    if (autoFecharModal) { clearTimeout(autoFecharModal); autoFecharModal = null; }
+    modalSalvarEl.classList.remove('hidden');
+    modalSalvarIcone.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-2 bg-[#1a1a1a] border border-[#2a2a2a]';
+    modalSalvarIcone.innerHTML = ICONE_SPINNER;
+    modalSalvarTitulo.textContent = 'Salvando…';
+    modalSalvarTexto.textContent = 'Gravando as alterações no banco de dados.';
+    travarFechamentoModal(true);
+}
+function modalMostrarSucesso() {
+    modalSalvarIcone.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-2 bg-[#00ff66]';
+    modalSalvarIcone.innerHTML = ICONE_SUCESSO;
+    modalSalvarTitulo.textContent = 'Alterações salvas!';
+    modalSalvarTexto.textContent = 'O site já foi atualizado com o novo conteúdo.';
+    travarFechamentoModal(false);
+    autoFecharModal = setTimeout(fecharModalSalvar, 3500); // fecha sozinho, mas pode fechar antes
+}
+function modalMostrarErro() {
+    modalSalvarIcone.className = 'w-16 h-16 rounded-full flex items-center justify-center mb-2 bg-[#ff3b30]';
+    modalSalvarIcone.innerHTML = ICONE_ERRO;
+    modalSalvarTitulo.textContent = 'Não foi possível salvar';
+    modalSalvarTexto.textContent = 'Verifique sua conexão com a internet e tente novamente.';
+    travarFechamentoModal(false);
+}
+function fecharModalSalvar() {
+    if (modalSalvarFechar.disabled) return;
+    if (autoFecharModal) { clearTimeout(autoFecharModal); autoFecharModal = null; }
+    modalSalvarEl.classList.add('hidden');
+}
+modalSalvarFechar.addEventListener('click', fecharModalSalvar);
+modalSalvarBackdrop.addEventListener('click', fecharModalSalvar);
+
 // ---------- Salvar no Firestore ----------
 async function salvar() {
-    const msgEl = document.getElementById('mensagem-salvar');
-    msgEl.textContent = 'Salvando...';
+    if (salvando) return;
+    salvando = true;
+    const botoes = [document.getElementById('btn-salvar'), document.getElementById('btn-salvar-rodape')];
+    botoes.forEach((b) => { b.disabled = true; });
+    abrirModalSalvar();
+    document.getElementById('status-conexao').innerHTML = '<span class="pulso-status pulso-carregando"></span>Salvando…';
     try {
         await salvarConteudo(dados);
-        msgEl.textContent = 'Alterações salvas! O site já foi atualizado.';
-        setTimeout(() => { msgEl.textContent = ''; }, 4000);
+        modalMostrarSucesso();
+        marcarLimpo('Conectado — tudo salvo.');
     } catch (erro) {
         console.error(erro);
-        msgEl.textContent = 'Erro ao salvar. Verifique sua conexão e tente novamente.';
+        modalMostrarErro();
+        marcarSujo();
+    } finally {
+        salvando = false;
+        botoes.forEach((b) => { b.disabled = false; });
     }
 }
 document.getElementById('btn-salvar').addEventListener('click', salvar);
