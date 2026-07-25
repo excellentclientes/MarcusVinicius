@@ -193,8 +193,9 @@
                             <div class="w-full max-w-5xl mx-auto mt-8 flex flex-col items-center gap-6">
                                 <div class="relative w-full aspect-video rounded-2xl border border-neutral-800 bg-[#050505] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] flex items-center justify-center">
                                     <div class="w-full h-full relative flex items-center justify-center bg-black">
-                                        <div class="w-full h-full relative cursor-pointer group flex items-center justify-center overflow-hidden">
-                                            <img alt="Capa do Vídeo" class="absolute inset-0 w-full h-full object-cover filter contrast-[1.05] brightness-[0.55] group-hover:scale-105 transition-all duration-700" referrerpolicy="no-referrer" src="hero_bpo.jpg">
+                                        <video id="d-hero-video-player" class="hidden absolute inset-0 w-full h-full object-cover" controls playsinline></video>
+                                        <div id="d-hero-video-thumb" class="w-full h-full relative cursor-pointer group flex items-center justify-center overflow-hidden">
+                                            <img id="d-hero-video-capa" alt="Capa do Vídeo" class="absolute inset-0 w-full h-full object-cover filter contrast-[1.05] brightness-[0.55] group-hover:scale-105 transition-all duration-700" referrerpolicy="no-referrer" src="hero_bpo.jpg">
                                             <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20"></div>
                                             <div class="relative z-10 flex flex-col items-center gap-4">
                                                 <div class="h-20 w-20 bg-[#00ff66] text-black rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(0,255,102,0.5)] border border-[#00ff66]/30 relative" tabindex="0">
@@ -677,26 +678,30 @@
 
         // -----------------------------------------------------------
         // 1) ANIMAÇÃO DE SURGIMENTO (fade + slide-up ao rolar a tela)
+        //    Exposta como window.__bpoAplicarReveal(elementos) para que
+        //    o conteúdo carregado dinamicamente do Firebase (dados.js)
+        //    também ganhe a mesma animação ao ser inserido na página.
         // -----------------------------------------------------------
-        var revealSelectors = [
-            '#hero .max-w-4xl.mx-auto',
-            '#hero .max-w-5xl.mx-auto',
-            '#stats .grid > div',
-            'main .text-center.max-w-3xl',
-            'main .text-center.max-w-2xl',
-            '#testimonials .max-w-xl.mx-auto',
-            '#warranty .rounded-3xl',
-            '#pricing .rounded-3xl'
-        ];
-        // OBS: os cards de #benefits, #who-is-it-for, #content, #differentials e #faq
-        // agora são renderizados dinamicamente via dados.js (Firebase) e recebem seu
-        // próprio tratamento de efeito dentro do script de integração (ver final do arquivo).
+        var io = (!reduceMotion && 'IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                var el = entry.target;
+                el.classList.add('reveal-play');
+                io.unobserve(el);
+                var delay = parseInt(el.dataset.revealDelay || '0', 10);
+                setTimeout(function () {
+                    el.classList.remove('reveal-init', 'reveal-play');
+                    el.style.animationDelay = '';
+                }, delay + 830);
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' }) : null;
 
-        var revealEls = document.querySelectorAll(revealSelectors.join(','));
-
-        if (!reduceMotion && 'IntersectionObserver' in window) {
+        function aplicarReveal(elementos) {
+            if (!io) return;
+            var lista = Array.prototype.slice.call(elementos);
             var parentCounts = new Map();
-            revealEls.forEach(function (el) {
+            lista.forEach(function (el) {
+                if (el.classList.contains('reveal-init')) return;
                 el.classList.add('reveal-init');
                 var parent = el.parentElement;
                 var i = parentCounts.get(parent) || 0;
@@ -704,43 +709,54 @@
                 var delay = Math.min(i * 80, 400);
                 el.dataset.revealDelay = delay;
                 el.style.animationDelay = delay + 'ms';
+                io.observe(el);
             });
-
-            var io = new IntersectionObserver(function (entries) {
-                entries.forEach(function (entry) {
-                    if (!entry.isIntersecting) return;
-                    var el = entry.target;
-                    el.classList.add('reveal-play');
-                    io.unobserve(el);
-                    var delay = parseInt(el.dataset.revealDelay || '0', 10);
-                    setTimeout(function () {
-                        el.classList.remove('reveal-init', 'reveal-play');
-                        el.style.animationDelay = '';
-                    }, delay + 830);
-                });
-            }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-
-            revealEls.forEach(function (el) { io.observe(el); });
         }
+        window.__bpoAplicarReveal = aplicarReveal;
 
-        // -----------------------------------------------------------
-        // 2) EFEITO NEON VERDE ao clicar/tocar nos cards
-        // -----------------------------------------------------------
-        var clickSelectors = [
-            '#hero .rounded-2xl.border.border-neutral-800',
+        var revealSelectors = [
+            '#hero .max-w-4xl.mx-auto',
+            '#hero .max-w-5xl.mx-auto',
+            '#stats .grid > div',
+            'main .text-center.max-w-3xl',
+            'main .text-center.max-w-2xl',
+            '#benefits .rounded-2xl.border-2',
+            '#who-is-it-for .rounded-2xl.border',
+            '#testimonials .max-w-xl.mx-auto',
             '#warranty .rounded-3xl',
             '#pricing .rounded-3xl'
         ];
+        aplicarReveal(document.querySelectorAll(revealSelectors.join(',')));
+        // Os cards de #benefits, #who-is-it-for (itens), #content, #differentials
+        // e #faq são renderizados dinamicamente pelo dados.js (Firebase) e chamam
+        // window.__bpoAplicarReveal / window.__bpoAtivarNeonClick assim que são
+        // criados, no final do arquivo.
 
-        var clickEls = document.querySelectorAll(clickSelectors.join(','));
-        clickEls.forEach(function (card) {
-            card.classList.add('fx-clickable-card');
-            card.addEventListener('click', function () {
-                card.classList.remove('fx-neon-click');
-                void card.offsetWidth; // força reflow para reiniciar a animação em cliques seguidos
-                card.classList.add('fx-neon-click');
+        // -----------------------------------------------------------
+        // 2) EFEITO NEON VERDE ao clicar/tocar nos cards
+        //    Exposta como window.__bpoAtivarNeonClick(elementos) pelo
+        //    mesmo motivo do item acima.
+        // -----------------------------------------------------------
+        function ativarNeonClick(elementos) {
+            Array.prototype.slice.call(elementos).forEach(function (card) {
+                if (card.classList.contains('fx-clickable-card')) return;
+                card.classList.add('fx-clickable-card');
+                card.addEventListener('click', function () {
+                    card.classList.remove('fx-neon-click');
+                    void card.offsetWidth; // força reflow para reiniciar a animação em cliques seguidos
+                    card.classList.add('fx-neon-click');
+                });
             });
-        });
+        }
+        window.__bpoAtivarNeonClick = ativarNeonClick;
+
+        var clickSelectors = [
+            '#hero .rounded-2xl.border.border-neutral-800',
+            '#who-is-it-for .rounded-2xl.border',
+            '#warranty .rounded-3xl',
+            '#pricing .rounded-3xl'
+        ];
+        ativarNeonClick(document.querySelectorAll(clickSelectors.join(',')));
 
         // -----------------------------------------------------------
         // 3) EFEITO DE BRILHO (REFLEXO) ao pressionar os botões de CTA
@@ -1005,6 +1021,7 @@
             if (el && valor !== undefined && valor !== null) el.innerHTML = valor;
         }
 
+        var videoJaConfigurado = false;
         function renderHero(hero) {
             if (!hero) return;
             setText('d-hero-badge', hero.badge);
@@ -1014,6 +1031,29 @@
             setText('d-hero-descricao', hero.descricao);
             (hero.selos || []).forEach(function (texto, i) { setText('d-hero-selo-' + i, texto); });
             setText('d-hero-cta', hero.botaoTexto);
+
+            // Capa do vídeo (imagem enviada no painel, salva em base64, ou a padrão do repositório)
+            var capaEl = document.getElementById('d-hero-video-capa');
+            if (capaEl && hero.capaVideo) capaEl.setAttribute('src', hero.capaVideo);
+
+            // Configura o player de vídeo (apenas uma vez) para tocar o arquivo
+            // que está na mesma pasta do site no GitHub, ex.: "apresentacao.mp4"
+            if (!videoJaConfigurado) {
+                videoJaConfigurado = true;
+                var thumb = document.getElementById('d-hero-video-thumb');
+                var player = document.getElementById('d-hero-video-player');
+                if (thumb && player) {
+                    thumb.addEventListener('click', function () {
+                        var arquivo = (hero && hero.videoArquivo) ? hero.videoArquivo : 'apresentacao.mp4';
+                        if (!player.getAttribute('src')) {
+                            player.setAttribute('src', encodeURI(arquivo));
+                        }
+                        thumb.classList.add('hidden');
+                        player.classList.remove('hidden');
+                        player.play().catch(function () { /* autoplay pode ser bloqueado; o usuário já vê os controles */ });
+                    });
+                }
+            }
         }
 
         function renderStats(stats) {
@@ -1044,6 +1084,7 @@
                 aplicarNeonClick(div);
                 wrap.appendChild(div);
             });
+            if (window.__bpoAplicarReveal) window.__bpoAplicarReveal(wrap.children);
         }
 
         function renderPerfilAluno(perfil) {
@@ -1059,8 +1100,10 @@
                 div.className = 'flex items-start gap-3 rounded-lg border border-[#1a1a1a] bg-[#141414]/50 p-4 hover:border-[#00ff66]/20 transition-all';
                 div.innerHTML = svg('<circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path>', 'mt-0.5 h-5 w-5 flex-shrink-0 text-[#00ff66] text-glow-green') +
                     '<span class="text-sm font-medium text-gray-300 leading-snug">' + escapeHtml(texto) + '</span>';
+                aplicarNeonClick(div);
                 wrap.appendChild(div);
             });
+            if (window.__bpoAplicarReveal) window.__bpoAplicarReveal(wrap.children);
         }
 
         function renderIncluso(incluso) {
@@ -1080,8 +1123,10 @@
                     '<div class="flex h-6.5 w-6.5 flex-shrink-0 items-center justify-center rounded-full border transition-transform duration-300 group-hover:scale-110 ' + (destaque ? 'border-[#00ff66] bg-[#00ff66] text-[#0b0b0b]' : 'border-[#00ff66]/30 bg-[#0d3b2a]/40 text-[#00ff66]') + '">' + svg('<path d="M20 6 9 17l-5-5"></path>', 'h-3.5 w-3.5 stroke-[3]') + '</div>' +
                     '<span class="text-sm font-semibold tracking-tight ' + (destaque ? 'text-[#00ff66] text-glow-green' : 'text-gray-200') + '">' + escapeHtml(item.texto) + '</span>' +
                     (destaque ? '<span class="absolute right-3 top-3 rounded bg-[#00ff66]/10 px-1.5 py-0.5 text-[8px] font-bold tracking-wider text-[#00ff66] uppercase border border-[#00ff66]/20">Destaque</span>' : '');
+                aplicarNeonClick(div);
                 wrap.appendChild(div);
             });
+            if (window.__bpoAplicarReveal) window.__bpoAplicarReveal(wrap.children);
         }
 
         function renderDifferentials(diff) {
@@ -1103,6 +1148,7 @@
                 aplicarNeonClick(div);
                 wrap.appendChild(div);
             });
+            if (window.__bpoAplicarReveal) window.__bpoAplicarReveal(wrap.children);
         }
 
         function renderWarranty(w) {
@@ -1146,8 +1192,10 @@
                     resposta.classList.toggle('hidden');
                     icone.style.transform = fechado ? 'rotate(180deg)' : 'rotate(0deg)';
                 });
+                aplicarNeonClick(div);
                 wrap.appendChild(div);
             });
+            if (window.__bpoAplicarReveal) window.__bpoAplicarReveal(wrap.children);
         }
 
         function renderTudo(data) {

@@ -64,6 +64,13 @@ const conteudoPadrao = {
       "Aprenda um método simples, direto e prático para dar seus primeiros passos nas operações de trade sem perder tempo com teorias desnecessárias e complicadas, agora com suporte individual no WhatsApp e mentoria por videoconferência direta com o professor!",
     selos: ["✔ Método Intensivo", "✔ Acesso Imediato", "✔ Para Iniciantes", "✔ Suporte no WhatsApp"],
     botaoTexto: "QUERO COMEÇAR AGORA",
+    // Nome do arquivo de vídeo, que deve estar na MESMA pasta do site no GitHub
+    // (ex.: junto do index.html). O player busca esse arquivo por esse nome.
+    videoArquivo: "apresentacao.mp4",
+    // Imagem de capa do vídeo (miniatura mostrada antes do play), salva em
+    // base64 direto no Firestore quando o cliente envia uma imagem no painel.
+    // Se ficar vazio, o site usa a imagem padrão "hero_bpo.jpg" do repositório.
+    capaVideo: "",
   },
 
   stats: [
