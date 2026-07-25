@@ -1403,9 +1403,17 @@
             }
             setText('d-hero-cta', hero.botaoTexto);
 
-            // Capa do vídeo (imagem enviada no painel, salva em base64, ou a padrão do repositório)
+            // Capa do vídeo (imagem enviada no painel, salva em base64, ou a padrão do repositório).
+            // Também é usada como "poster" do player, preenchendo o fundo preto atrás
+            // do vídeo enquanto ele carrega/dá o buffer inicial.
             var capaEl = document.getElementById('d-hero-video-capa');
-            if (capaEl && hero.capaVideo) capaEl.setAttribute('src', hero.capaVideo);
+            var playerElCapa = document.getElementById('d-hero-video-player');
+            if (capaEl && hero.capaVideo) {
+                capaEl.setAttribute('src', hero.capaVideo);
+                if (playerElCapa) playerElCapa.setAttribute('poster', hero.capaVideo);
+            } else if (playerElCapa && capaEl) {
+                playerElCapa.setAttribute('poster', capaEl.getAttribute('src') || '');
+            }
 
             // O video ja foi baixado por completo na tela de carregamento e
             // guardado em memoria. So trocamos a fonte se o painel apontar
@@ -1438,6 +1446,14 @@
                         thumb.classList.add('hidden');
                         player.classList.remove('hidden');
                         player.play().catch(function () { /* autoplay pode ser bloqueado; o usuário já vê os controles */ });
+                    });
+
+                    // Quando o vídeo termina, a capa volta a aparecer no lugar do
+                    // player — assim o visitante pode assistir de novo com um clique.
+                    player.addEventListener('ended', function () {
+                        player.classList.add('hidden');
+                        thumb.classList.remove('hidden');
+                        try { player.currentTime = 0; } catch (e) { /* ignora */ }
                     });
                 }
             }
