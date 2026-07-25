@@ -133,9 +133,154 @@
         @media (max-width: 400px) {
             h1.font-display { letter-spacing: -0.01em; }
         }
+
+        /* ==========================================================
+           TELA DE CARREGAMENTO (0% a 100%)
+           Escrita em CSS puro de propósito: assim ela já aparece
+           pronta mesmo antes do Tailwind terminar de processar,
+           evitando qualquer "piscada" de tela sem estilo.
+           ========================================================== */
+        body.fx-loading {
+            overflow: hidden;
+        }
+        #tela-carregamento {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background-color: #0b0b0b;
+            opacity: 1;
+            transition: opacity 0.6s ease;
+        }
+        #tela-carregamento.fx-loader-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .fx-load-glow {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 460px;
+            height: 460px;
+            max-width: 120vw;
+            max-height: 120vw;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 255, 102, 0.10);
+            filter: blur(120px);
+            border-radius: 9999px;
+            pointer-events: none;
+        }
+        .fx-load-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: #ffffff;
+            position: relative;
+        }
+        .fx-load-logo-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 9px;
+            border-radius: 12px;
+            background-color: #0d3b2a;
+            border: 1px solid rgba(0, 255, 102, 0.3);
+            color: #00ff66;
+        }
+        .fx-load-logo .fx-load-bpo {
+            color: #00ff66;
+            text-shadow: 0 0 12px rgba(0, 255, 102, 0.6);
+        }
+        .fx-load-track {
+            position: relative;
+            margin-top: 38px;
+            width: 100%;
+            max-width: 320px;
+        }
+        .fx-load-rail {
+            height: 6px;
+            width: 100%;
+            border-radius: 9999px;
+            background-color: #171717;
+            border: 1px solid #232323;
+            overflow: hidden;
+        }
+        .fx-load-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 9999px;
+            background: linear-gradient(90deg, #00b34a 0%, #00ff66 60%, #7dffb0 100%);
+            box-shadow: 0 0 14px rgba(0, 255, 102, 0.75);
+            transition: width 0.18s ease-out;
+        }
+        .fx-load-info {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 11px;
+            letter-spacing: 0.06em;
+        }
+        .fx-load-status {
+            color: #7a7a7a;
+        }
+        .fx-load-pct {
+            color: #00ff66;
+            font-weight: 700;
+            text-shadow: 0 0 12px rgba(0, 255, 102, 0.6);
+        }
+        .fx-load-legenda {
+            margin-top: 26px;
+            font-size: 10px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: #4a4a4a;
+            text-align: center;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #tela-carregamento { transition: none; }
+            .fx-load-fill { transition: none; }
+        }
     </style>
 </head>
-<body>
+<body class="fx-loading">
+    <!-- =====================================================================
+         TELA DE CARREGAMENTO
+         Fica na frente do site até que (1) a página, (2) o conteúdo vindo do
+         Firebase e (3) o vídeo apresentacao.mp4 estejam prontos. A barra vai
+         de 0% a 100% acompanhando o carregamento real, com uma trava de
+         segurança para nunca prender o usuário caso algo falhe.
+         ===================================================================== -->
+    <div id="tela-carregamento">
+        <div class="fx-load-glow"></div>
+
+        <div class="fx-load-logo">
+            <span class="fx-load-logo-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="height:22px;width:22px" aria-hidden="true"><path d="M16 7h6v6"></path><path d="m22 7-8.5 8.5-5-5L2 17"></path></svg>
+            </span>
+            MÉTODO&nbsp;<span class="fx-load-bpo">BPO</span>
+        </div>
+
+        <div class="fx-load-track">
+            <div class="fx-load-rail">
+                <div id="carregamento-barra" class="fx-load-fill"></div>
+            </div>
+            <div class="fx-load-info">
+                <span id="carregamento-status" class="fx-load-status">Iniciando…</span>
+                <span id="carregamento-pct" class="fx-load-pct">0%</span>
+            </div>
+            <div class="fx-load-legenda">Preparando sua experiência</div>
+        </div>
+    </div>
+
     <div id="root">
         <div class="min-h-screen bg-[#0b0b0b] font-sans antialiased selection:bg-[#00ff66] selection:text-[#0b0b0b]">
             <header id="navbar" class="sticky top-0 z-50 w-full border-b border-[#1a1a1a]/80 bg-[#0b0b0b]/90 backdrop-blur-md">
@@ -619,6 +764,157 @@
     </div>
 
     <!-- SCRIPT PARA OS EFEITOS DA PÁGINA (BARRA, CONTADOR E FAQ) -->
+    <!-- =====================================================================
+         CONTROLE DA TELA DE CARREGAMENTO
+         A barra só chega a 100% quando as três etapas terminam de verdade:
+         a página, o conteúdo do Firebase e o vídeo da apresentação.
+         ===================================================================== -->
+    <script>
+    (function () {
+        var overlay = document.getElementById('tela-carregamento');
+        if (!overlay) return;
+
+        var barra = document.getElementById('carregamento-barra');
+        var pctEl = document.getElementById('carregamento-pct');
+        var statusEl = document.getElementById('carregamento-status');
+        var player = document.getElementById('d-hero-video-player');
+
+        var inicio = Date.now();
+        var TEMPO_MINIMO = 1500;   // não some rápido demais (evita "piscar" a tela)
+        var TEMPO_MAXIMO = 12000;  // trava de segurança: nunca prende o usuário
+
+        // Cada etapa concluída libera uma fatia da barra
+        var etapas = {
+            pagina:   { peso: 25, ok: false }, // HTML, CSS e imagens
+            conteudo: { peso: 30, ok: false }, // textos vindos do Firebase (dados.js)
+            video:    { peso: 45, ok: false }  // apresentacao.mp4 pronto para dar play
+        };
+
+        var progresso = 0;
+        var finalizado = false;
+
+        function concluir(nome) {
+            if (etapas[nome]) etapas[nome].ok = true;
+        }
+
+        function alvoAtual() {
+            var total = 0;
+            for (var k in etapas) { if (etapas[k].ok) total += etapas[k].peso; }
+            return total;
+        }
+
+        function textoStatus(p) {
+            if (p < 25) return 'Iniciando…';
+            if (p < 55) return 'Carregando conteúdo…';
+            if (p < 92) return 'Preparando a apresentação…';
+            return 'Quase lá…';
+        }
+
+        function esconder() {
+            overlay.classList.add('fx-loader-out');
+            document.body.classList.remove('fx-loading');
+            setTimeout(function () {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                // recalcula a barrinha de progresso do topo depois que a rolagem volta
+                window.dispatchEvent(new Event('scroll'));
+            }, 700);
+        }
+
+        var loop = setInterval(function () {
+            var decorrido = Date.now() - inicio;
+            var alvo = alvoAtual();
+            if (decorrido >= TEMPO_MAXIMO) alvo = 100; // libera mesmo se algo falhar
+
+            if (progresso < alvo) {
+                // aproxima suavemente da fatia já liberada
+                progresso += Math.max(0.7, (alvo - progresso) * 0.09);
+                if (progresso > alvo) progresso = alvo;
+            } else if (alvo < 100) {
+                // Se uma etapa demora, a barra continua avançando devagarinho
+                // rumo a um teto que sobe com o tempo (nunca parece travada).
+                var teto = Math.min(95, alvo + 8 + (decorrido / TEMPO_MAXIMO) * 24);
+                if (progresso < teto) progresso += Math.max(0.05, (teto - progresso) * 0.02);
+            }
+
+            var pronto = (alvo >= 100) && (decorrido >= TEMPO_MINIMO);
+            if (pronto) {
+                progresso = 100;
+            } else if (progresso > 99) {
+                progresso = 99;
+            }
+
+            var mostrado = Math.floor(progresso);
+            if (barra) barra.style.width = mostrado + '%';
+            if (pctEl) pctEl.textContent = mostrado + '%';
+            if (statusEl) statusEl.textContent = textoStatus(mostrado);
+
+            if (pronto && !finalizado) {
+                finalizado = true;
+                clearInterval(loop);
+                setTimeout(esconder, 450); // deixa o 100% respirar antes de sumir
+            }
+        }, 60);
+
+        // ---- Etapa 1: página carregada (HTML, CSS, imagens) ----
+        if (document.readyState === 'complete') {
+            concluir('pagina');
+        } else {
+            window.addEventListener('load', function () { concluir('pagina'); });
+        }
+
+        // ---- Etapa 2: conteúdo do Firebase renderizado ----
+        // O script de integração (dados.js) avisa chamando esta função.
+        window.__bpoConteudoPronto = function () { concluir('conteudo'); };
+
+        // ---- Etapa 3: vídeo da apresentação pronto para tocar ----
+        // O vídeo começa a baixar AQUI, durante a tela de carregamento, para que
+        // o play seja instantâneo quando o usuário clicar em "ASSISTIR APRESENTAÇÃO".
+        if (player) {
+            var videoLiberado = false;
+            var liberarVideo = function () {
+                if (videoLiberado) return;
+                videoLiberado = true;
+                concluir('video');
+            };
+
+            player.setAttribute('preload', 'auto');
+            if (!player.getAttribute('src')) {
+                player.setAttribute('src', 'apresentacao.mp4');
+            }
+
+            player.addEventListener('canplaythrough', liberarVideo);
+            player.addEventListener('error', liberarVideo);  // arquivo ausente não trava o site
+            player.addEventListener('canplay', function () {
+                // se o buffer completo demorar, libera assim mesmo depois de 3s
+                setTimeout(liberarVideo, 3000);
+            });
+            player.addEventListener('loadeddata', function () {
+                setTimeout(liberarVideo, 4000);
+            });
+            // No celular os navegadores limitam o pré-carregamento para economizar
+            // dados, então também liberamos quando já houver buffer suficiente.
+            player.addEventListener('loadedmetadata', function () {
+                setTimeout(liberarVideo, 5000);
+            });
+            player.addEventListener('progress', function () {
+                try {
+                    if (!player.buffered || !player.buffered.length) return;
+                    var fimBuffer = player.buffered.end(player.buffered.length - 1);
+                    var duracao = player.duration || 0;
+                    // 8 segundos de vídeo em buffer (ou 25% do total) já bastam
+                    if (fimBuffer >= 8 || (duracao > 0 && fimBuffer / duracao >= 0.25)) {
+                        liberarVideo();
+                    }
+                } catch (e) { /* ignora */ }
+            });
+
+            try { player.load(); } catch (e) { liberarVideo(); }
+        } else {
+            concluir('video');
+        }
+    })();
+    </script>
+
     <script>
         // 1. Efeito da Barra de Progresso no Topo
         window.addEventListener('scroll', function() {
@@ -730,6 +1026,7 @@
 
         var clickSelectors = [
             '#hero .rounded-2xl.border.border-neutral-800',
+            '#benefits .rounded-2xl.border-2',
             '#who-is-it-for .rounded-2xl.border',
             '#warranty .rounded-3xl',
             '#pricing .rounded-3xl'
@@ -1024,8 +1321,18 @@
             var capaEl = document.getElementById('d-hero-video-capa');
             if (capaEl && hero.capaVideo) capaEl.setAttribute('src', hero.capaVideo);
 
-            // Configura o player de vídeo (apenas uma vez) para tocar o arquivo
-            // que está na mesma pasta do site no GitHub, ex.: "apresentacao.mp4"
+            // O player já começou a baixar "apresentacao.mp4" na tela de
+            // carregamento. Se o painel apontar para outro arquivo, troca aqui.
+            var playerEl = document.getElementById('d-hero-video-player');
+            if (playerEl && hero.videoArquivo) {
+                var desejado = encodeURI(hero.videoArquivo);
+                if ((playerEl.getAttribute('src') || '') !== desejado) {
+                    playerEl.setAttribute('src', desejado);
+                    try { playerEl.load(); } catch (e) { /* ignora */ }
+                }
+            }
+
+            // Configura o clique da capa (apenas uma vez) para iniciar o vídeo
             if (!videoJaConfigurado) {
                 videoJaConfigurado = true;
                 var thumb = document.getElementById('d-hero-video-thumb');
@@ -1202,6 +1509,7 @@
             if (window.__bpoAplicarReveal) window.__bpoAplicarReveal(wrap.children);
         }
 
+        var conteudoJaAvisado = false;
         function renderTudo(data) {
             data = data || conteudoPadrao;
             renderHero(data.hero);
@@ -1215,6 +1523,11 @@
             renderFaq(data.faq);
             if (typeof window.__bpoAtualizarTestimonials === 'function' && data.testimonials) {
                 window.__bpoAtualizarTestimonials(data.testimonials);
+            }
+            // Avisa a tela de carregamento que o conteúdo já está na página
+            if (!conteudoJaAvisado) {
+                conteudoJaAvisado = true;
+                if (typeof window.__bpoConteudoPronto === 'function') window.__bpoConteudoPronto();
             }
         }
 
