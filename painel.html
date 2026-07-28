@@ -169,7 +169,34 @@
                 <span id="carregamento-pct" class="fx-load-pct">0%</span>
             </div>
         </div>
+        <div id="carregamento-aviso" style="display:none; max-width:290px; margin-top:22px; text-align:center;">
+            <p style="font-size:12.5px; line-height:1.6; color:#bbb;">
+                A página está demorando demais para carregar. Se você abriu este link de dentro do
+                <strong style="color:#fff">WhatsApp, Instagram</strong> ou outro app, toque nos
+                <strong style="color:#fff">3 pontinhos</strong> (ou no ícone de compartilhar) no canto da tela e
+                escolha <strong style="color:#fff">"Abrir no navegador"</strong> (Chrome ou Safari).
+                Se já está no navegador, verifique sua conexão com a internet.
+            </p>
+            <button onclick="location.reload()" style="margin-top:14px; background:#1a1a1a; color:#ddd; border:1px solid #2a2a2a; font-weight:700; border-radius:10px; padding:8px 16px; font-size:12.5px;">
+                Tentar novamente
+            </button>
+        </div>
     </div>
+
+    <!-- Vigia: se o script principal (módulo) não conseguir nem começar a
+         rodar em alguns segundos — comum em navegadores embutidos de apps
+         como WhatsApp/Instagram, ou em conexões que bloqueiam o Firebase —
+         mostra um aviso explicando o que fazer, em vez de travar em "0%"
+         para sempre sem dizer nada. -->
+    <script>
+        setTimeout(function () {
+            if (window.__bpoModuloIniciou) return;
+            var aviso = document.getElementById('carregamento-aviso');
+            var status = document.getElementById('carregamento-status');
+            if (status) status.textContent = 'Não foi possível conectar';
+            if (aviso) aviso.style.display = 'block';
+        }, 7000);
+    </script>
 
     <!-- ===================================================================
          TELA DE LOGIN
@@ -456,6 +483,11 @@ import {
     conteudoPadrao, buscarConteudo, salvarConteudo, ouvirConteudo,
     EMAIL_AUTORIZADO, entrarComGoogle, sairDaConta, escutarAutenticacao,
 } from './dados.js';
+
+// Avisa o "vigia" (script fora do módulo, lá em cima) que o carregamento
+// do módulo principal deu certo — assim ele não precisa mostrar o aviso
+// de "não foi possível conectar".
+window.__bpoModuloIniciou = true;
 
 let dados = null;      // conteúdo atual em edição (objeto JS)
 let sujo = false;       // true quando há alterações ainda não salvas
