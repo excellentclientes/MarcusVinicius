@@ -26,21 +26,61 @@ import {
   setDoc,
   onSnapshot,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 // -----------------------------------------------------------------------------
-// 1) CONFIGURAÇÃO DO FIREBASE (a mesma que você enviou)
+// 1) CONFIGURAÇÃO DO FIREBASE (projeto novo: marcusviniciusbpo)
 // -----------------------------------------------------------------------------
 const firebaseConfig = {
-  apiKey: "AIzaSyC_BiV0IZRFhTBKH1-ZbuG0PxEceIME5NU",
-  authDomain: "marcusviniciuscliente.firebaseapp.com",
-  projectId: "marcusviniciuscliente",
-  storageBucket: "marcusviniciuscliente.firebasestorage.app",
-  messagingSenderId: "254045911066",
-  appId: "1:254045911066:web:65a69dde9fc5b0985e79a3",
+  apiKey: "AIzaSyCIIdGLpGP07yzM-lRocHpfUOH05KFnG1Y",
+  authDomain: "marcusviniciusbpo.firebaseapp.com",
+  databaseURL: "https://marcusviniciusbpo-default-rtdb.firebaseio.com",
+  projectId: "marcusviniciusbpo",
+  storageBucket: "marcusviniciusbpo.firebasestorage.app",
+  messagingSenderId: "620909005105",
+  appId: "1:620909005105:web:c546fd3881dfc12b61c810",
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// -----------------------------------------------------------------------------
+// AUTENTICAÇÃO (login com Google) — usado apenas pelo painel de controle
+// -----------------------------------------------------------------------------
+// Isto aqui é só para a EXPERIÊNCIA do painel (mostrar a tela certa,
+// bloquear o botão de salvar, etc.). A proteção que realmente impede
+// qualquer outra pessoa de alterar os dados são as REGRAS DE SEGURANÇA
+// do Firestore, lá no console do Firebase — configure-as para aceitar
+// escrita apenas quando o e-mail autenticado for o mesmo abaixo.
+const auth = getAuth(app);
+const provedorGoogle = new GoogleAuthProvider();
+
+// Único e-mail com permissão para editar o conteúdo do site pelo painel.
+const EMAIL_AUTORIZADO = "ct.marcusvinicius2@gmail.com";
+
+/** Abre o pop-up de login do Google. Não valida o e-mail aqui — quem faz
+ *  essa checagem é o código do painel (painel.html), que decide o que
+ *  mostrar na tela conforme o resultado. */
+function entrarComGoogle() {
+  return signInWithPopup(auth, provedorGoogle);
+}
+
+/** Desconecta o usuário atual. */
+function sairDaConta() {
+  return signOut(auth);
+}
+
+/** Fica "escutando" mudanças no estado de login (entrou/saiu). Retorna uma
+ *  função para cancelar a escuta, se precisar. */
+function escutarAutenticacao(callback) {
+  return onAuthStateChanged(auth, callback);
+}
 
 // Onde o conteúdo fica guardado dentro do Firestore:
 // coleção "site", documento "conteudo"
@@ -249,4 +289,16 @@ async function salvarConteudo(dados) {
   await setDoc(refConteudo, dados);
 }
 
-export { db, refConteudo, conteudoPadrao, buscarConteudo, ouvirConteudo, salvarConteudo };
+export {
+  db,
+  refConteudo,
+  conteudoPadrao,
+  buscarConteudo,
+  ouvirConteudo,
+  salvarConteudo,
+  auth,
+  EMAIL_AUTORIZADO,
+  entrarComGoogle,
+  sairDaConta,
+  escutarAutenticacao,
+};

@@ -171,7 +171,36 @@
         </div>
     </div>
 
-<div id="tela-painel">
+    <!-- ===================================================================
+         TELA DE LOGIN
+         Fica visível até o Google confirmar que quem entrou é o e-mail
+         autorizado. Some quando login é aprovado; some a tela de carregamento
+         e mostra esta caso não haja sessão válida ou o e-mail seja diferente.
+         =================================================================== -->
+    <div id="tela-login" style="display:none;" class="fixed inset-0 z-[99998] flex-col items-center justify-center px-6 py-10 bg-black">
+        <div class="fx-load-glow"></div>
+        <div class="relative w-full max-w-sm flex flex-col items-center text-center gap-1">
+            <span class="fx-load-metodo">M&eacute;todo</span>
+            <span class="fx-load-bpo" style="font-size:34px;">BPO</span>
+            <p class="fx-load-sub mt-1">Painel de Controle</p>
+
+            <div class="w-full mt-8 bg-[#121212] border border-[#222] rounded-2xl p-6 flex flex-col items-center gap-4">
+                <div class="w-11 h-11 rounded-full bg-[#0d3b2a] border border-[#00ff66]/30 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px;color:#00ff66" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </div>
+                <p class="text-[13px] text-gray-400 leading-relaxed">Acesso restrito. Entre com a conta Google autorizada para editar o conteúdo do site.</p>
+
+                <button id="btn-entrar-google" class="w-full inline-flex items-center justify-center gap-2.5 bg-white text-[#1f1f1f] font-bold rounded-lg px-4 py-2.5 text-sm hover:bg-gray-100 transition-colors">
+                    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"></path><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+                    Entrar com Google
+                </button>
+
+                <p id="login-erro" class="hidden text-[12px] text-[#ff6b6b] leading-relaxed bg-[#2a1414] border border-[#ff6b6b]/25 rounded-lg px-3 py-2"></p>
+            </div>
+        </div>
+    </div>
+
+<div id="tela-painel" style="display:none;">
     <header class="sticky top-0 z-50 bg-[#0b0b0b]/95 backdrop-blur border-b border-[#1a1a1a] px-4 sm:px-6 py-3.5">
         <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
             <div class="min-w-0">
@@ -190,6 +219,9 @@
                 <button id="btn-salvar" class="btn-primario">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path><path d="M7 3v4a1 1 0 0 0 1 1h7"></path></svg>
                     Salvar
+                </button>
+                <button id="btn-sair" title="Sair da conta" class="btn-icone">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                 </button>
             </div>
         </div>
@@ -420,7 +452,10 @@
 </div>
 
 <script type="module">
-import { conteudoPadrao, buscarConteudo, salvarConteudo, ouvirConteudo } from './dados.js';
+import {
+    conteudoPadrao, buscarConteudo, salvarConteudo, ouvirConteudo,
+    EMAIL_AUTORIZADO, entrarComGoogle, sairDaConta, escutarAutenticacao,
+} from './dados.js';
 
 let dados = null;      // conteúdo atual em edição (objeto JS)
 let sujo = false;       // true quando há alterações ainda não salvas
@@ -1043,8 +1078,73 @@ async function salvar() {
 document.getElementById('btn-salvar').addEventListener('click', salvar);
 document.getElementById('btn-salvar-rodape').addEventListener('click', salvar);
 
-// Como não há mais tela de login, o painel já inicia direto.
-iniciarPainel();
+// ---------- Login com Google (só libera o painel para o e-mail autorizado) ----------
+const telaLogin = document.getElementById('tela-login');
+const telaPainelEl = document.getElementById('tela-painel');
+const btnEntrarGoogle = document.getElementById('btn-entrar-google');
+const btnSair = document.getElementById('btn-sair');
+const loginErroEl = document.getElementById('login-erro');
+
+function ehEmailAutorizado(usuario) {
+    return !!usuario && (usuario.email || '').toLowerCase() === EMAIL_AUTORIZADO.toLowerCase();
+}
+
+function mostrarTelaLogin(mensagemErro) {
+    esconderTelaCarregamento();
+    telaPainelEl.style.display = 'none';
+    telaLogin.style.display = 'flex';
+    if (loginErroEl) {
+        loginErroEl.textContent = mensagemErro || '';
+        loginErroEl.classList.toggle('hidden', !mensagemErro);
+    }
+}
+
+function mostrarPainelLiberado() {
+    telaLogin.style.display = 'none';
+    telaPainelEl.style.display = '';
+    iniciarPainel();
+}
+
+btnEntrarGoogle.addEventListener('click', async () => {
+    btnEntrarGoogle.disabled = true;
+    try {
+        await entrarComGoogle();
+        // A confirmação (e a checagem do e-mail) acontece em escutarAutenticacao() abaixo.
+    } catch (erro) {
+        console.error(erro);
+        // O usuário fechou o pop-up ou algo falhou — não é necessariamente "e-mail errado".
+        if (erro && erro.code !== 'auth/popup-closed-by-user' && erro.code !== 'auth/cancelled-popup-request') {
+            mostrarTelaLogin('Não foi possível entrar. Tente novamente.');
+        }
+    } finally {
+        btnEntrarGoogle.disabled = false;
+    }
+});
+
+btnSair.addEventListener('click', async () => {
+    if (sujo && !confirm('Você tem alterações não salvas. Sair agora vai descartá-las. Deseja continuar?')) return;
+    await sairDaConta();
+});
+
+// Guarda a mensagem de "e-mail não autorizado" entre o signOut() e o
+// próximo disparo de escutarAutenticacao(), para não se perder no caminho.
+let mensagemLoginPendente = '';
+
+escutarAutenticacao(async (usuario) => {
+    if (ehEmailAutorizado(usuario)) {
+        mensagemLoginPendente = '';
+        mostrarPainelLiberado();
+        return;
+    }
+    if (usuario) {
+        // Logou com Google, mas não é o e-mail autorizado: desloga na hora.
+        mensagemLoginPendente = 'O e-mail "' + usuario.email + '" não tem permissão para acessar este painel. Entre com a conta autorizada.';
+        await sairDaConta();
+        return; // a chamada acima dispara este callback de novo, com usuario = null
+    }
+    mostrarTelaLogin(mensagemLoginPendente);
+    mensagemLoginPendente = '';
+});
 </script>
 </body>
 </html>
