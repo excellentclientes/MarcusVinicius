@@ -57,12 +57,15 @@ const db = getFirestore(app);
 // bloquear o botão de salvar, etc.). A proteção que realmente impede
 // qualquer outra pessoa de alterar os dados são as REGRAS DE SEGURANÇA
 // do Firestore, lá no console do Firebase — configure-as para aceitar
-// escrita apenas quando o e-mail autenticado for o mesmo abaixo.
+// escrita apenas quando o e-mail autenticado estiver na lista abaixo.
 const auth = getAuth(app);
 const provedorGoogle = new GoogleAuthProvider();
 
-// Único e-mail com permissão para editar o conteúdo do site pelo painel.
-const EMAIL_AUTORIZADO = "ct.marcusvinicius2@gmail.com";
+// E-mails com permissão para editar o conteúdo do site pelo painel.
+const EMAILS_AUTORIZADOS = [
+  "ct.marcusvinicius2@gmail.com",
+  "excellentservices.excel@gmail.com",
+];
 
 /** Abre o pop-up de login do Google. Não valida o e-mail aqui — quem faz
  *  essa checagem é o código do painel (painel.html), que decide o que
@@ -297,7 +300,7 @@ export {
   ouvirConteudo,
   salvarConteudo,
   auth,
-  EMAIL_AUTORIZADO,
+  EMAILS_AUTORIZADOS,
   entrarComGoogle,
   sairDaConta,
   escutarAutenticacao,

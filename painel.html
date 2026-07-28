@@ -481,7 +481,7 @@
 <script type="module">
 import {
     conteudoPadrao, buscarConteudo, salvarConteudo, ouvirConteudo,
-    EMAIL_AUTORIZADO, entrarComGoogle, sairDaConta, escutarAutenticacao,
+    EMAILS_AUTORIZADOS, entrarComGoogle, sairDaConta, escutarAutenticacao,
 } from './dados.js';
 
 // Avisa o "vigia" (script fora do módulo, lá em cima) que o carregamento
@@ -1118,7 +1118,9 @@ const btnSair = document.getElementById('btn-sair');
 const loginErroEl = document.getElementById('login-erro');
 
 function ehEmailAutorizado(usuario) {
-    return !!usuario && (usuario.email || '').toLowerCase() === EMAIL_AUTORIZADO.toLowerCase();
+    if (!usuario || !usuario.email) return false;
+    var email = usuario.email.toLowerCase();
+    return EMAILS_AUTORIZADOS.some(function (e) { return e.toLowerCase() === email; });
 }
 
 function mostrarTelaLogin(mensagemErro) {
