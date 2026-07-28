@@ -409,6 +409,30 @@
                 </div>
             </section>
 
+            <!-- SUPORTE / BOTÃO FLUTUANTE DE WHATSAPP -->
+            <section id="sec-suporte" class="flex flex-col gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="secao-icone"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px;height:19px" aria-hidden="true"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path></svg></span>
+                    <div><span class="secao-titulo">Botão de Suporte (WhatsApp)</span><p class="secao-sub">O botão verde flutuante que aparece no canto da tela em todas as páginas do site.</p></div>
+                </div>
+                <div class="card-editor grid gap-3">
+                    <div>
+                        <span class="campo-label">Número do WhatsApp</span>
+                        <input class="campo-input" data-campo="suporte.numeroWhatsapp" placeholder="Ex: 553172188347" />
+                        <p class="campo-dica">Só números, com código do país + DDD juntos, sem espaços, +, ou traços. Brasil = 55. Ex.: para (31) 7218-8347 fica <code class="text-gray-400">553172188347</code>.</p>
+                    </div>
+                    <div>
+                        <span class="campo-label">Mensagem pronta</span>
+                        <textarea class="campo-textarea" data-campo="suporte.mensagem"></textarea>
+                        <p class="campo-dica">Texto que já aparece digitado no WhatsApp quando a pessoa clica no botão.</p>
+                    </div>
+                    <div>
+                        <span class="campo-label">Texto do balão (aparece ao passar o mouse)</span>
+                        <input class="campo-input" data-campo="suporte.textoBotao" placeholder="Ex: Falar com Suporte" />
+                    </div>
+                </div>
+            </section>
+
             <!-- PRICING -->
             <section id="sec-pricing" class="flex flex-col gap-4">
                 <div class="flex items-center gap-3">
@@ -503,6 +527,7 @@ const SECOES = [
     { id: 'sec-incluso', label: 'Incluso', icone: '<circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path>' },
     { id: 'sec-differentials', label: 'Diferenciais', icone: '<path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path><circle cx="12" cy="8" r="6"></circle>' },
     { id: 'sec-warranty', label: 'Garantia', icone: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path>' },
+    { id: 'sec-suporte', label: 'Suporte (WhatsApp)', icone: '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path>' },
     { id: 'sec-pricing', label: 'Preço', icone: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle>' },
     { id: 'sec-testimonials', label: 'Depoimentos', icone: '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"></path>' },
     { id: 'sec-faq', label: 'FAQ', icone: '<circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path>' }

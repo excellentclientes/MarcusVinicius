@@ -208,6 +208,15 @@ const conteudoPadrao = {
     botaoTexto: "QUERO INSCREVER-ME PELA HOTMART",
   },
 
+  // Botão flutuante verde de WhatsApp que aparece no canto da tela (fala
+  // com o suporte). "numeroWhatsapp" deve ter só números, com código do
+  // país e DDD juntos (ex.: 55 + 31 + o número = 553172188347).
+  suporte: {
+    numeroWhatsapp: "553172188347",
+    mensagem: "Olá! Gostaria de tirar dúvidas sobre o Método BPO.",
+    textoBotao: "Falar com Suporte",
+  },
+
   testimonials: [
     {
       iniciais: "FH",
